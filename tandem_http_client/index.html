@@ -1,0 +1,168 @@
+<html>
+
+<head>
+  <meta content="text/html;charset=utf-8" http-equiv="Content-Type" />
+  <link href="https://unpkg.com/tailwindcss@^1.0/dist/tailwind.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.css"
+    integrity="sha512-uf06llspW44/LZpHzHT6qBOIVODjWtv4MxCricRxkzvopAlSWnTf6hpZTFxuuZcuNE9CBQhqE0Seu1CoRk84nQ=="
+    crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <link href="https://uploads-ssl.webflow.com/6262a2a7735ff102899431ef/6262a2a7735ff1a94d943269_SINE_Favicon.png"
+    rel="shortcut icon" type="image/x-icon">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.js"
+    integrity="sha512-xwrAU5yhWwdTvvmMNheFn9IyuDbl/Kyghz2J3wQRDR8tyNmT8ZIYOd0V3iPYY/g4XdNPy0n/g0NvqGu9f0fPJQ=="
+    crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/mode/simple.min.js"
+    integrity="sha512-9YoNYsegWvbA5aiSshQ2BNW2FAq3CQVLqpg2r6urw9Tfl1GklM9PNgrMRVz8fhEtjM+uZfO/1X3RURkMcil8wg=="
+    crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/rust/rust.min.js"
+    integrity="sha512-g3Nhw36S0p4ZJQcky87D5M+vZbFvLrgsHWYltUy5IW0zKbvi8GlPRjJSo2CyUyQiU01Ier7u+rBABDs3BawKyQ=="
+    crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/theme/nord.min.css"
+    integrity="sha512-sPc4jmw78pt6HyMiyrEt3QgURcNRk091l3dZ9M309x4wM2QwnCI7bUtsLnnWXqwBMECE5YZTqV6qCDwmC2FMVA=="
+    crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <style>
+    .CodeMirror {
+      height: fit-content;
+    }
+
+  </style>
+</head>
+
+<body class="bg-gray-300">
+  <div class="w-full max-w-5xl mx-auto py-4">
+    <div>
+      <a href="https://sine.foundation" target="_blank"><img src="./assets/SINE_logo.png" alt="SINE Foundation"
+          class="h-8 md:h-10 mx-auto my-8"></a>
+      <form class="playground-cell bg-white shadow-md rounded px-6 pt-6 pb-6">
+        <div class="pb-6 text-center">
+          <h1 class="text-lg">Playground for <a href="https://sine.foundation/library/002-smpc" alt="Secure
+          Multi-Party Computation" style="text-decoration: underline #fef08a; text-decoration-thickness: 4px;">Secure
+              Multi-Party
+              Computation</a> using SINE's <a href="https://github.com/sine-fdn/wrk17-alpha"
+              style="text-decoration: underline #fef08a; text-decoration-thickness: 4px;">Tandem engine</a>.
+          </h1>
+        </div>
+        <div class="md:flex mb-4">
+          <div
+            class="playground-source-code-container text-sm shadow appearance-none border rounded w-full text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+            <textarea class="playground-source-code" name="source-code" rows="8" cols="100">
+// All programs must be written in Garble.
+// See https://github.com/sine-fdn/garble-lang
+
+pub fn main(a: i32, b: i32) -> i32 {
+    a + b
+}</textarea>
+          </div>
+        </div>
+        <div class="mb-4">
+          <input
+            class="playground-function-name shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            type="text" placeholder="Function to Execute">
+        </div>
+        <div class="mb-4">
+          <input
+            class="playground-plaintext-metadata shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            type="text" placeholder="Metadata (Plaintext)">
+        </div>
+        <div class="mb-4">
+          <input
+            class="playground-private-input shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            type="text" placeholder="Input (Kept Private)">
+        </div>
+        <div class="md:flex md:items-center">
+          <div class="pr-4">
+            <button
+              class="playground-btn-compute bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-2 rounded focus:outline-none focus:shadow-outline inline-flex items-center"
+              type="button">
+              Compute
+            </button>
+          </div>
+          <div class="playground-output-div hidden md:flex md:items-center" class="mb-4">
+            <svg class="playground-spinner hidden animate-spin h-10 w-10 text-blue-500" xmlns="http://www.w3.org/2000/svg"
+              fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4">
+              </circle>
+              <path class="opacity-75" fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+              </path>
+            </svg>
+            <pre style="white-space: pre-wrap"
+              class="font-mono appearance-none rounded w-full py-2 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"><code class="playground-output" name="source-code"></code></pre>
+          </div>
+        </div>
+        <p class="text-center text-gray-500 text-xs">
+            SMPC Engine WASM Notebook by <a class="text-blue-400 hover:text-blue-500 transition duration-300 ease-in-out" href="https://sine.foundation/">SINE Foundation e.V.</a>
+        </p>
+    </div>
+    <!-- Note the usage of `type=module` here as this is an ES6 module -->
+    <script type="module">
+        import init, { MpcProgram, MpcData, compute } from './pkg/tandem_http_client.js';
+
+    const code_mirror_config = {
+      lineNumbers: true,
+      mode: "rust",
+      theme: "nord",
+    };
+
+    const source_code_area = document.getElementsByClassName("playground-source-code")[0];
+    const editor = CodeMirror.fromTextArea(source_code_area, code_mirror_config);
+    const cell = document.getElementsByClassName("playground-cell")[0];
+
+    const addCellListeners = (cell, editor) => {
+      const spinner = cell.getElementsByClassName("playground-spinner")[0];
+      const btn_compute = cell.getElementsByClassName("playground-btn-compute")[0];
+      const output_div = cell.getElementsByClassName("playground-output-div")[0];
+      btn_compute.addEventListener("click", async function () {
+        const url = "http:/localhost:8000";
+        const source_code = editor.getValue();
+        const function_name = cell.getElementsByClassName("playground-function-name")[0].value;
+        const my_input = cell.getElementsByClassName("playground-private-input")[0].value;
+        const plaintext_metadata = cell.getElementsByClassName("playground-plaintext-metadata")[0].value;
+        spinner.classList.remove("hidden");
+        btn_compute.classList.add("cursor-not-allowed");
+        btn_compute.classList.add("opacity-50");
+        btn_compute.disabled = true;
+
+        let is_success = false;
+        const output = cell.getElementsByClassName("playground-output")[0];
+        output.classList.add("hidden");
+        try {
+          const t0 = performance.now();
+
+          const mpc_program = new MpcProgram(source_code, function_name);
+          const info_about_gates = mpc_program.report_gates();
+          const t1 = performance.now();
+
+          const mpc_input = MpcData.from_string(mpc_program, my_input);
+          const result = (await compute(url, plaintext_metadata, mpc_program, mpc_input)).to_literal_string();
+          const t2 = performance.now();
+
+          console.log(`Compilation: ${((t1 - t0) / 1000).toFixed(2)}s, MPC: ${((t2 - t1) / 1000).toFixed(2)}s, for ${info_about_gates}`);
+
+          output.innerHTML = result;
+          output.classList.remove("border-red-500");
+          output.classList.remove("text-red-500");
+          is_success = true;
+        } catch (e) {
+          output.innerHTML = e;
+          output.classList.add("border-red-500");
+          output.classList.add("text-red-500");
+        } finally {
+          output.classList.remove("hidden");
+          output_div.classList.remove("hidden");
+          spinner.classList.add("hidden");
+          btn_compute.classList.remove("cursor-not-allowed");
+          btn_compute.classList.remove("opacity-50");
+          btn_compute.disabled = false;
+        }
+      });
+    };
+
+        init().then(() => {
+            console.log("Ready for running Secure Multi-Party Computation from WASM...");
+            addCellListeners(cell, editor);
+        });
+    </script>
+</body>
+
+</html>

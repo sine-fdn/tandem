@@ -1,0 +1,11 @@
+[package]
+name = "tandem_garble_interop"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+tandem = { version = "0.0.1-alpha-do-not-use", path = "../tandem" }
+garble_lang = { version = "0.1.7", features = ["serde"] }
+
+[lib]
+bench = false

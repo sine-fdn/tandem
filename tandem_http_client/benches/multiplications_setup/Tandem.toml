@@ -1,0 +1,5 @@
+[handlers.mul_1]
+_ = "42u64"
+
+[handlers.mul_10]
+_ = "42u64"

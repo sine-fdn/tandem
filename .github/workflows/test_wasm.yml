@@ -1,0 +1,27 @@
+on: [push]
+
+name: Tests (Wasm)
+
+jobs:
+  build_and_test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+      - name: Cache target
+        uses: actions/cache@v2
+        env:
+          cache-name: cache-default-target-and-lockfile
+        with:
+          path: |
+            target
+            Cargo.lock
+            ~/.rustup
+          key: ${{ env.cache-name }}-${{ hashFiles('**/Cargo.toml') }}
+      - run: cargo build --features "bin"
+      - name: Install wasm-pack
+        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+      - run: bash ./test_wasm_echo_example.sh
+      - run: bash ./test_wasm_smart_cookie_example.sh
