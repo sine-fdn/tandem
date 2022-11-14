@@ -1,0 +1,23 @@
+[handlers.and_10]
+_ = "true"
+
+[handlers.and_100]
+_ = "true"
+
+[handlers.and_1000]
+_ = "true"
+
+[handlers.and_10000]
+_ = "true"
+
+[handlers.xor_10]
+_ = "true"
+
+[handlers.xor_100]
+_ = "true"
+
+[handlers.xor_1000]
+_ = "true"
+
+[handlers.xor_10000]
+_ = "true"

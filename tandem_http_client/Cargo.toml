@@ -1,0 +1,65 @@
+[package]
+name = "tandem_http_client"
+version = "0.1.0"
+edition = "2021"
+
+
+[[bin]]
+name = "tandem_http_client"
+path = "src/main.rs"
+required-features = ["bin"] # to avoid wasm-pack trying to build main.rs
+
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+bench = false
+
+[features]
+default = ["console_error_panic_hook"]
+bin = []
+
+[dependencies]
+tandem = { version = "0.0.1-alpha-do-not-use", path = "../tandem" }
+url = "2.3"
+rand_chacha = "0.3.1"
+bincode = "1.3"
+getrandom = { version = "0.2", features = ["js"] }
+serde = { version = "1.0", features = ["derive"] }
+serde-wasm-bindgen = "0.4"
+serde_json = "1.0"
+reqwest = { version = "0.11", features = ["json"] }
+tandem_garble_interop = { path = "../tandem_garble_interop" }
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+tokio = { version = "1", features = ["full"] }
+clap = { version = "4.0", features = ["derive"] }
+anyhow = "1.0"
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wasm-bindgen = { version = "0.2", features = ["serde-serialize"] }
+wasm-bindgen-futures = "0.4"
+console_error_panic_hook = { version = "0.1", optional = true }
+wee_alloc = { version = "0.4", optional = true }
+
+[target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
+rand = "0.8.5"
+assert_cmd = "2.0"
+predicates = "2.1"
+criterion = { version = "0.4", features = ["async_tokio"] }
+
+[target.'cfg(target_arch = "wasm32")'.dev-dependencies]
+wasm-bindgen-test = "0.3"
+console_log = "0.2"
+js-sys = "0.3"
+
+[[bench]]
+name = "multiplications"
+harness = false
+
+[[bench]]
+name = "credit_scoring"
+harness = false
+
+[[bench]]
+name = "circuits"
+harness = false

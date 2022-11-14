@@ -1,0 +1,8 @@
+{
+    "label": "Watch",
+    "group": "build",
+    "type": "shell",
+    "command": "cargo watch",
+    "problemMatcher": "$rustc-watch",
+    "isBackground": true
+}

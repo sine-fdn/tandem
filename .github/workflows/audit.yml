@@ -1,0 +1,14 @@
+on: [push]
+
+name: Audit
+
+jobs:
+  build_and_test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: rust-audit-check
+        if: ${{ github.actor != 'dependabot[bot]' }}
+        uses: actions-rs/audit-check@v1.2.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}

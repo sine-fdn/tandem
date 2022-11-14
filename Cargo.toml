@@ -1,0 +1,8 @@
+[workspace]
+
+members = [
+    "tandem",
+    "tandem_http_server",
+    "tandem_http_client",
+    "tandem_garble_interop",
+]
