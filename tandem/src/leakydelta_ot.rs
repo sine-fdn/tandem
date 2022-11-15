@@ -1,8 +1,9 @@
-//! Implements Correlated OT protocols from [ALS13]
+//! Implements Correlated OT protocols from [ALSZ13].
 //!
-//! Correlated OT uses Base OT to initialize [K] many RNGs. Implements WRK17-compatible optimization from [ALS13][2] (chapter 5.4)
+//! Correlated OT uses Base OT to initialize [`K`] many RNGs. Implements WRK17-compatible
+//! optimizations from [ALSZ13] (chapter 5.4)
 //!
-//! [ALS13]: <https://eprint.iacr.org/2013/552.pdf>
+//! [ALSZ13]: <https://eprint.iacr.org/2013/552.pdf>
 
 use crate::{
     ot_base::message::Init as BaseOTInit,
@@ -12,10 +13,10 @@ use crate::{
 use rand::{Rng, SeedableRng};
 use rand_chacha::ChaCha20Rng;
 
-// number of bits authenticated in a single run of the OT protocol (i.e. "batch size")
+/// Number of bits authenticated in a single run of the OT protocol (i.e. "batch size").
 pub(crate) const BLOCK_SIZE: usize = K;
 
-// Collection of messages exchanged between OT sender and receiver
+/// Collection of messages exchanged between OT sender and receiver.
 pub(crate) mod message {
     use serde::{Deserialize, Serialize};
 
@@ -81,27 +82,28 @@ pub(crate) mod message {
     pub(crate) struct OtBits(pub(super) [MacType; super::K]);
 }
 
-// initial state of a Receiver FSM in Leaky Delta OT protocol terms
+/// Initial state of a Receiver in Leaky Delta OT protocol terms.
 #[derive(Clone)]
 pub(crate) struct ReceiverInitializer {
     senders: Box<[BaseSender; K]>,
     ot_messages: Box<[[OtMessage; 2]; K]>,
 }
 
+/// Initial state of a Sender in Leaky Delta OT protocol terms.
 #[derive(Clone)]
 pub(crate) struct SenderInitializer {
     delta: Delta,
     receivers: Box<[BaseReceiver; K]>,
 }
 
-// A Receiver in Leaky Delta OT protocol terms
+// A Receiver in Leaky Delta OT protocol terms.
 #[derive(Debug, Clone)]
 pub(crate) struct LeakyOtReceiver {
     otg0: Box<[ChaCha20Rng; K]>,
     otg1: Box<[ChaCha20Rng; K]>,
 }
 
-// A Sender in Leaky Delta OT protocol terms
+/// A Sender in Leaky Delta OT protocol terms.
 #[derive(Debug, Clone)]
 pub(crate) struct LeakyOtSender {
     delta: Delta,
@@ -109,7 +111,10 @@ pub(crate) struct LeakyOtSender {
 }
 
 impl ReceiverInitializer {
-    // starts a new OT extension receiver session, yielding the message to be sent upstream plus an intermediate struct to create a LeakyOtReceiver
+    /// Starts a new OT extension receiver session.
+    ///
+    /// Returns the message to be sent upstream plus an intermediate struct to create a
+    /// [`LeakyOtReceiver`].
     pub(crate) fn init(rng: &mut ChaCha20Rng) -> (Self, message::OtInit) {
         let senders = Box::new([(); K].map(|_| BaseSender::new(rng)));
         let mut idxs = [0; K];
@@ -136,7 +141,8 @@ impl ReceiverInitializer {
         (s, message::OtInit(msgs))
     }
 
-    // called after the respective [message::OtInit] message was received from an upstream [`LeakyOtSender`] leaking a new OT receiver session
+    /// Called after the respective [`message::OtInit`] message was received from an upstream
+    /// [`LeakyOtSender`] leaking a new OT receiver session.
     pub(crate) fn recv(&self, m: &message::OtInit) -> (LeakyOtReceiver, message::OtInitReply) {
         let mut idxs = [0; K];
         for (i, idx) in idxs.iter_mut().enumerate().take(K) {
@@ -161,7 +167,10 @@ impl ReceiverInitializer {
 }
 
 impl SenderInitializer {
-    // starts a new OT extension sender session, yielding the message to be sent upstream plus an intermediate struct to create a LeakyOtSender
+    /// Starts a new OT extension sender session.
+    ///
+    /// Returns the message to be sent upstream plus an intermediate struct to create a
+    /// [`LeakyOtSender`].
     pub(crate) fn init(
         rng: &mut ChaCha20Rng,
         delta: Delta,
@@ -183,7 +192,8 @@ impl SenderInitializer {
         (Self { delta, receivers }, message::OtInit(msgs))
     }
 
-    // called after the respective [message::OtInitReply] message was received from an upstream [ReceiverInitializer] returning a new [`LeakyOtSender`]
+    /// Called after the respective [`message::OtInitReply`] message was received from an upstream
+    /// [`ReceiverInitializer`], returning a new [`LeakyOtSender`].
     pub(crate) fn recv(self, m: &message::OtInitReply) -> LeakyOtSender {
         let mut idxs = [0; K];
         for (i, idx) in idxs.iter_mut().enumerate().take(K) {
@@ -204,10 +214,11 @@ impl SenderInitializer {
     }
 }
 
-/// a Leaky OT sender (in OT extension terms) derives authenticated bits from upstream OT data
+/// A Leaky OT sender (in OT extension terms) derives authenticated bits from upstream OT data.
 impl LeakyOtSender {
-    // "sends" data in Leaky OT sense; that is after receiving `ot_out` from a [LeakyOTReceiver] and stores resulting
-    // OT result is stored in `macs_out`
+    /// "Sends" data in Leaky OT sense; that is after receiving `ot_rx` from a [`LeakyOtReceiver`].
+    ///
+    /// Stores the resulting OT in `keys_out`.
     pub(crate) fn send(&mut self, ot_rx: &[MacType], keys_out: &mut [MacType]) {
         let mut q_i = [KeyType(0); BLOCK_SIZE];
         for (i, q_i) in q_i.iter_mut().enumerate() {
@@ -225,11 +236,13 @@ impl LeakyOtSender {
 }
 
 impl LeakyOtReceiver {
-    // called to create a new batch of OT data. A batch is [BLOCK_SIZE]-many Keys / MACs exchanged in 1 round of OT
-    //
-    // - `random_bits` is a random byte string
-    // - `keys_out` is the batch of derived keys shared with upstream of length [BLOCK_SIZE]
-    // - `ot_out` is the data to be sent upstream of length [BLOCK_SIZE]
+    /// Called to create a new batch of OT data.
+    ///
+    /// A batch is [`BLOCK_SIZE`]-many Keys / MACs exchanged in 1 round of OT.
+    ///
+    /// - `random_bits` is a random byte string
+    /// - `keys_out` is the batch of derived keys shared with upstream of length [`BLOCK_SIZE`]
+    /// - `ot_out` is the data to be sent upstream of length [`BLOCK_SIZE`]
     pub(crate) fn new_batch(
         &mut self,
         random_bits: u128,
