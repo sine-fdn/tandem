@@ -1651,7 +1651,6 @@ fn compute_hashes(
 
 impl InputProcContrib {
     fn run(mut self, msg: &[u8], circuit: &Circuit, input: &[bool]) -> TandemResult<()> {
-        
         // P_B sends its mask to P_A which then returns masked input plus label to P_B for final
         // circuit evaluation
         let (shares, inputs): (Vec<InputMaskShare>, Vec<(u32, bool)>) = deserialize(msg)?;
