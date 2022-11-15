@@ -1,11 +1,11 @@
-//! Common type definitions
+//! Common type definitions.
 
 use std::ops::BitXor;
 
 use rand::{CryptoRng, Rng, RngCore};
 use serde::{Deserialize, Serialize};
 
-/// default value for # bits
+/// The number bits of computational security.
 pub(crate) const K: usize = SecurityBits::BITS as usize;
 
 pub(crate) type SecurityBits = u128;
@@ -56,62 +56,62 @@ impl From<MacType> for KeyType {
     }
 }
 
-/// A wire mask generated during preprocessing. Foundation for garbled circuit computation
+/// A wire mask generated during preprocessing. Foundation for garbled circuit computation.
 #[derive(Default, Debug, Clone)]
 pub(crate) struct WireMask {
-    /// wire's label if {bit.bit} is `false`
+    /// The wire label if {bit.bit} is `false`.
     pub(crate) label_0: WireLabel,
-    /// the current mask which is used to hide the wire's actual value
+    /// The current mask which is used to hide the wire's actual value.
     pub(crate) bit: BitShare,
 }
 
-/// Evaluation state derived at function-dependant preprocessing stage
+/// Evaluation state derived at function-dependant preprocessing stage.
 #[derive(Default, Debug, Clone)]
 pub(crate) struct WireState {
-    /// the label for this wire. computed during preprocessing
+    /// The label for this wire, computed during preprocessing.
     pub(crate) label: WireLabel,
-    /// the value of the wire after masking it with {bit.bit}
+    /// The value of the wire after masking it with {bit.bit}.
     pub(crate) masked_value: bool,
-    /// the AND table derived at preprocessing time, representing the local share
+    /// The AND table derived at preprocessing time, representing the local share.
     pub(crate) my_and_table: AndTableShare,
-    /// the AND table from a contributing party, representing their share
+    /// The AND table from a contributing party, representing their share.
     pub(crate) other_and_table: AndTableShare,
 }
 
 pub(crate) type TableShare = (u32, [BitShare; 4]);
 pub(crate) type InputMaskShare = (u32, PartialBitShare);
 
-/// the share of a bit coming from F_Pre.
+/// The share of a bit coming from F_Pre.
 ///
-/// the mac relates to the bit {bit} while the {key} relates to the bit given to the other party
+/// The mac relates to the bit {bit} while the {key} relates to the bit given to the other party.
 #[derive(Default, Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub(crate) struct BitShare {
-    /// mac key used for other party's bit
+    /// MAC key used for other party's bit.
     pub(crate) key: KeyType,
-    /// mac for this bit
+    /// MAC for this bit.
     pub(crate) mac: MacType,
-    /// the actual bit i.e. value of this authenticated bit
+    /// The actual bit i.e. value of this authenticated bit.
     pub(crate) bit: bool,
 }
 
-/// a partial bit share; used for disclosing one's authenticated bit
+/// A partial bit share; used for disclosing one's authenticated bit.
 #[derive(Default, Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub(crate) struct PartialBitShare {
-    /// authenticated bit's mac
+    /// The authenticated bit's MAC.
     pub(crate) mac: MacType,
-    /// authenticated bit's value
+    /// The authenticated bit's value.
     pub(crate) bit: bool,
 }
 
-/// random bitmask used to construct AND gate table shares
+/// Random bitmask used to construct AND gate table shares.
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub(crate) struct WireLabel(pub(crate) SecurityBits);
 
-/// the processing node-global hiding key AKA **THE DELTA**
+/// The processing node-global hiding key AKA **THE DELTA**.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) struct Delta(pub(crate) SecurityBits);
 
-/// shafe of an AND table
+/// Share of an AND table.
 pub(crate) type AndTableShare = [BitShare; 4];
 
 impl Delta {
@@ -163,7 +163,7 @@ impl WireLabel {
 }
 
 impl WireMask {
-    /// returns a label matching the given {bit}
+    /// Returns a label matching the given {bit}.
     #[inline]
     pub(crate) fn label(&self, bit: bool, delta: &Delta) -> WireLabel {
         if bit {
@@ -173,7 +173,7 @@ impl WireMask {
         }
     }
 
-    /// compute a new wire mask under XOR-homomorphism
+    /// Computes a new wire mask under XOR-homomorphism.
     #[inline]
     pub(crate) fn xor(&self, rhs: &WireMask) -> WireMask {
         let label_0 = self.label_0.xor(&rhs.label_0);
@@ -183,9 +183,9 @@ impl WireMask {
         }
     }
 
-    /// negate the current WireMask
+    /// Negates the current WireMask.
     ///
-    /// (and thereby enabling `NOT` gate support @ engine-level)
+    /// (This is used to enable `NOT` gate support at the engine-level.)
     #[inline]
     pub(crate) fn not(&self, delta: &Delta) -> WireMask {
         WireMask {
@@ -196,7 +196,7 @@ impl WireMask {
 }
 
 impl BitShare {
-    /// XOR homomorphism
+    /// XOR homomorphism.
     pub(crate) fn xor(&self, rhs: &BitShare) -> BitShare {
         BitShare {
             key: KeyType(self.key.0 ^ rhs.key.0),
@@ -207,7 +207,7 @@ impl BitShare {
 }
 
 impl PartialBitShare {
-    /// MAC verification of an authenticated bit
+    /// MAC verification of an authenticated bit.
     pub(crate) fn verify(&self, key: &KeyType, delta: &Delta) -> bool {
         (if self.bit { delta.0 } else { 0 }) ^ key.0 == self.mac.0
     }

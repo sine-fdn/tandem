@@ -4,7 +4,7 @@
 //! XOR and NOT gates) without revealing the inputs of either party to the other party.
 //!
 //! The core protocol implemented in this crate is
-//! [WRK17](ttps://acmccs.github.io/papers/p21-wangA.pdf), with an OT extension and optimizations
+//! [WRK17](https://acmccs.github.io/papers/p21-wangA.pdf), with an OT extension and optimizations
 //! based on [ALSZ13](https://eprint.iacr.org/2013/552.pdf) and a base OT implementation based on
 //! [ABKLX21](https://eprint.iacr.org/2021/1218.pdf).
 //!

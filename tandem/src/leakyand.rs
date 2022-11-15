@@ -1,4 +1,4 @@
-//! WRK17 Protocols `Π_{HaAND}` and `Π_{LaAND}`
+//! WRK17 sub-protocols `Π_{HaAND}` and `Π_{LaAND}`.
 use crate::{
     hash::hash,
     types::{Delta, KeyType, MacType, K},
@@ -6,13 +6,16 @@ use crate::{
 
 pub(crate) type AndHashes = [[MacType; 2]];
 
-/// Implements steps 1-3 of `Π_{HaAND}`; i.e. it creates [K]-many hashes for each secret value to be sent to the other party
+/// Implements steps 1-3 of `Π_{HaAND}`; i.e. it creates [`K`]-many hashes for each secret value to
+/// be sent to the other party.
 ///
-/// - the parameters `authenticated_bits_y`, `keys` are the result of a leakydelta_ot exchange; i.e. `keys[i]` is the key for authenticated bit at index `i`
+/// - the parameters `authenticated_bits_y`, `keys` are the result of a leakydelta_ot exchange; i.e.
+///   `keys[i]` is the key for authenticated bit at index `i`
 /// - parameter `random_bits` equals variable `t_i` (resp. `s_i`) of the `Π_{HaAND}` protocol
 /// - delta is the local delta...
 ///
-/// i.e this is a "vectorized" implementation of the protocol to operate on batches of `N` many authenticated bits at once
+/// i.e. this is a "vectorized" implementation of the protocol to operate on batches of `N` many
+/// authenticated bits at once.
 pub(crate) fn compute_leaky_and_hashes(
     out: &mut AndHashes,
     delta: &Delta,
@@ -31,11 +34,10 @@ pub(crate) fn compute_leaky_and_hashes(
     }
 }
 
-/// Implements the 2nd part of `Π_{HaAND}` of step 3 plus step 4
+/// Implements the 2nd part of `Π_{HaAND}` of step 3 plus step 4.
 ///
-/// It takes K-many `and_hashes` from the other party which were computed through [compute_leaky_and_hashes].
-/// This function outputs K-many `v_i` as to the `Π_{HaAND}` protocol
-///
+/// It takes K-many `and_hashes` from the other party which were computed through
+/// [compute_leaky_and_hashes]. This function outputs K-many `v_i` as per the `Π_{HaAND}` protocol.
 pub(crate) fn derive_and_shares(
     random_bits: u128,
     authenticated_bits: u128,
@@ -81,7 +83,7 @@ fn test_leaky_and_hashes() {
     );
 }
 
-/// generate K-many authenticated bits
+/// Generates [`K`]-many authenticated bits.
 #[cfg(test)]
 fn gen_abits() -> (
     Delta,

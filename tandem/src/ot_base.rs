@@ -1,4 +1,4 @@
-//! Chou Orlandi Simplest OT protocol based on a version from [ABKLX21]
+//! Chou Orlandi Simplest OT protocol based on a version from [ABKLX21].
 //!
 //!
 //! [ABKLX21]: https://eprint.iacr.org/2021/1218.pdf
@@ -8,11 +8,13 @@ use curve25519_dalek::scalar::Scalar;
 
 pub(crate) const MSG_LEN: usize = 32;
 
-/// the type of (random) message exchanged via the Base OT Protocol
+/// The type of (random) message exchanged via the Base OT Protocol.
 pub(crate) type OtMessage = [u8; MSG_LEN];
 
-/// Sender is the party sending data to a [`Receiver`],
-/// i.e. the logical actor offering 2 pieces of data of which only 1 the [`Receiver`] will be able to recover
+/// The party sending data to a [`Receiver`].
+///
+/// I.e. the logical actor offering 2 pieces of data of which the [`Receiver`] will be able to
+/// recover only 1.
 #[derive(Clone)]
 pub(crate) struct Sender {
     private_key: Scalar,
@@ -20,7 +22,7 @@ pub(crate) struct Sender {
     pub_key_squared: RistrettoPoint,
 }
 
-/// The party choosing 1-out-of-2 pieces of data w/o the [`Sender`] knowing which it was
+/// The party choosing 1-out-of-2 pieces of data w/o the [`Sender`] knowing which it was.
 #[derive(Clone)]
 pub(crate) struct Receiver {
     private_key: Scalar,
@@ -28,7 +30,7 @@ pub(crate) struct Receiver {
     choice: bool,
 }
 
-/// the kind of messages exchanged between a [`Sender`] and a [`Receiver`]
+/// The kind of messages exchanged between a [`super::Sender`] and a [`super::Receiver`].
 pub(crate) mod message {
     use std::slice;
 
@@ -38,11 +40,12 @@ pub(crate) mod message {
 
     use super::OtMessage;
 
-    /// Message to initiate the protocol; is sent between [`Sender`] and [`Receiver`] at first OT protocol step
+    /// Message to initiate the protocol; sent between [`super::Sender`] and [`super::Receiver`] at
+    /// first OT protocol step.
     #[derive(Debug, Copy, Clone, Default, PartialEq)]
     pub(crate) struct Init(pub(crate) RistrettoPoint);
 
-    /// Reply to the [`Init`] message, sent by the [`Receiver`] to the [`Sender`]
+    /// Reply to the [`Init`] message, sent by the [`super::Receiver`] to the [`super::Sender`].
     #[derive(Default, Debug, Clone, Copy, PartialEq)]
     pub(crate) struct InitReply(pub(super) [OtMessage; 2]);
 
@@ -83,7 +86,7 @@ pub(crate) mod message {
 }
 
 impl Sender {
-    /// Creates a new OT* protocol sender
+    /// Creates a new `OT*` protocol sender.
     pub(crate) fn new<RNG>(rng: &mut RNG) -> Self
     where
         RNG: rand::RngCore + rand::CryptoRng,
@@ -99,23 +102,24 @@ impl Sender {
         }
     }
 
-    /// create an [`message::Init`][Init] message suitable for exchange with a [`Receiver`]
+    /// Creates an [`message::Init`] message suitable for exchange with a [`Receiver`].
     ///
-    /// implements step 2 of protocol OT*
+    /// Implements step 2 of protocol `OT*`.
     pub(crate) fn init_message(&self) -> message::Init {
         message::Init(self.pub_key)
     }
 
-    /// the logical "send" part of the CO protocol
+    /// The logical "send" part of the CO protocol.
     ///
-    /// sends the 2 OT messages to the [`Receiver`] via the message [`message::InitReply`].
+    /// Sends the 2 OT messages to the [`Receiver`] via the message [`message::InitReply`].
     ///
-    /// implements step 3 of the protocol:
-    /// computation of "k_b := H(A, U^y B^{−b})"
-    ///  with A := self.pub_key
-    ///       U := upstream_init.0
-    ///       B := self.pub_key_squared
-    ///       b := choice bit [false, true]
+    /// Implements step 3 of the protocol:
+    ///
+    /// Computation of `k_b := H(A, U^y B^{−b})` with
+    ///   - `A := self.pub_key`
+    ///   - `U := upstream_init.0`
+    ///   - `B := self.pub_key_squared`
+    ///   - `b := choice bit [false, true]`
     pub(crate) fn send(
         &self,
         upstream_init: &message::Init,
@@ -126,7 +130,7 @@ impl Sender {
 
         let mut hasher = blake3::Hasher::new();
 
-        //   e_0 = H(A, U^y) XOR m_0
+        // e_0 = H(A, U^y) XOR m_0
         let key0 = {
             hasher.update(&my_pub_key_bytes);
             let upstream_bytes = (upstream_pub_key * self.private_key).compress().to_bytes();
@@ -136,7 +140,7 @@ impl Sender {
         };
         hasher.reset();
 
-        //   e_1 = H(A, U^y B^{−b}) XOR m_1
+        // e_1 = H(A, U^y B^{−b}) XOR m_1
         let key1 = {
             hasher.update(&my_pub_key_bytes);
             let upstream_bytes = ((upstream_pub_key * self.private_key) - self.pub_key_squared)
@@ -161,9 +165,9 @@ impl Sender {
 }
 
 impl Receiver {
-    /// Base OT Receiving function
+    /// Base OT Receiving function.
     ///
-    /// implements step 2 of protocol CO (Figure 4) of ABKLX21
+    /// Implements step 2 of protocol CO (Figure 4) of ABKLX21.
     pub(crate) fn init<RNG>(
         rng: &mut RNG,
         upstream_init: &message::Init,
@@ -192,15 +196,18 @@ impl Receiver {
         (init_msg, receiver)
     }
 
-    // the logical "receive" part of the CO protocol
-    //
-    // implements step 4 of the CO protocol (Figure 4) of ABKLX21:
-    // computation of
-    //     1. "k_b := H(A, A^x)"
-    //     2. "m_b := e_b XOR k_b"
-    //  with A := self.upstream_pub_key
-    //       x := self.private_key
-    //       m_b := message.0[self.choice]
+    /// The logical "receive" part of the CO protocol.
+    ///
+    /// Implements step 4 of the CO protocol (Figure 4) of ABKLX21:
+    ///
+    /// Computation of
+    ///   1. `"k_b := H(A, A^x)"`
+    ///   2. `"m_b := e_b XOR k_b"`
+    ///
+    ///  with
+    ///   - `A := self.upstream_pub_key`
+    ///   - `x := self.private_key`
+    ///   - `m_b := message.0[self.choice]`
     pub(crate) fn recv(self, upstream_init_reply: message::InitReply) -> OtMessage {
         // step 1 from above
         let mut hasher = blake3::Hasher::new();

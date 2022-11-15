@@ -1,24 +1,28 @@
-///! Implements a simple coin tossing protocol
-///
-/// consisting of:
-/// 1) calling init / init_rng to initialize the protocol
-///    - with disclosing the tuple item #2 (commitment message) to the other party
-/// 2) calling serialize() on the return coin share (tuple item #1 from `init`)
-/// 3) finishing the protocol by calling `finish` with the other party's coin commitment and coin share messages
+//! Implements a simple coin tossing protocol.
+//!
+//! This protocol is used to allow 2 parties to generate the same randomly tossed coins / `Vec<u8>`,
+//! which can then be used to seed the RNGs of both parties with the same seed.
+//!
+//! The protocol consists of:
+//!   1. calling [`init`] / [`init_rng`] to initialize the protocol
+//!      - thereby disclosing the tuple item #2 (commitment message) to the other party
+//!   2. calling [`serialize`] on the return coin share (tuple item #1 from `init`)
+//!   3. finishing the protocol by calling [`finish`] with the other party's coin commitment and
+//!      coin share messages
 use crate::Error;
 
-// number of bits for a coin
-pub const COIN_LEN: usize = 32;
-// number of bits for a commitment
+/// Number of bits for a coin.
+pub(crate) const COIN_LEN: usize = 32;
+/// Number of bits for a commitment.
 const HASH_LEN: usize = blake3::OUT_LEN;
 
 #[derive(Clone)]
 pub(crate) struct CoinShare([u8; COIN_LEN]);
 
-// result of coin tossing protocol
+/// Result of the coin tossing protocol.
 pub(crate) type CoinResult = [u8; COIN_LEN];
 
-// Creates a new coinshare and a message to be shared with another party
+/// Creates a new coinshare and a message to be shared with another party.
 pub(crate) fn init(coin: [u8; COIN_LEN]) -> Result<(CoinShare, Vec<u8>), Error> {
     let hash = hash_coinshare(&coin);
     let msg = bincode::serialize(&hash)?;
@@ -26,13 +30,13 @@ pub(crate) fn init(coin: [u8; COIN_LEN]) -> Result<(CoinShare, Vec<u8>), Error> 
     Ok((coin_share, msg))
 }
 
-// Serializes a CoinShare to be disclosed to another party at 2nd protocol step
+/// Serializes a CoinShare to be disclosed to another party at the 2nd protocol step.
 pub(crate) fn serialize(cs: &CoinShare) -> Result<Vec<u8>, Error> {
     let msg = bincode::serialize(&cs.0)?;
     Ok(msg)
 }
 
-// Verifies upstream coinshare and returns the resulting coin
+/// Verifies the upstream coinshare and returns the resulting coin.
 pub(crate) fn finish(
     coin_share: CoinShare,
     upstream_hash_msg: Vec<u8>,

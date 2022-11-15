@@ -1,9 +1,9 @@
-//! WRK17-compatible non-optimized hashing based on [blake3::Hasher]
+//! WRK17-compatible non-optimized hashing based on [`blake3::Hasher`].
 use blake3::OutputReader;
 
 use crate::types::{KeyType, MacType};
 
-/// WRK17-specific hashing for building garbled tables
+/// WRK17-specific hashing for building garbled tables.
 pub(crate) mod garbling_hash {
     use crate::{
         types::{BitShare, KeyType, MacType, WireLabel},
@@ -11,7 +11,7 @@ pub(crate) mod garbling_hash {
     };
     use std::io::Read;
 
-    /// computes a garbled table share
+    /// Computes a garbled table share.
     pub(crate) fn new(
         label_x: &WireLabel,
         label_y: &WireLabel,
@@ -54,16 +54,14 @@ pub(crate) mod garbling_hash {
     }
 }
 
-/// hash function for a single MAC
-pub(crate) fn hash(key: MacType) -> MacType {
-    hash_u128(key.0)
+pub(crate) fn hash(mac: MacType) -> MacType {
+    hash_u128(mac.0)
 }
 
 pub(crate) fn hash_key(key: KeyType) -> MacType {
     hash_u128(key.0)
 }
 
-#[inline]
 fn hash_u128(key: u128) -> MacType {
     let mut hasher = blake3::Hasher::new();
     hasher.update(&key.to_le_bytes());

@@ -391,7 +391,7 @@ struct OtAndsState6 {
     rhs_and_bits: Vec<bool>,
 }
 
-/// WRK17 "input processing phase"
+/// WRK17 "input processing phase".
 #[derive(Clone)]
 struct InputProcContrib {
     delta: Delta,
@@ -400,7 +400,7 @@ struct InputProcContrib {
     masks: Vec<WireMask>,
 }
 
-/// WRK17 "input processing phase" / "circuit evaluation phase"
+/// WRK17 "input processing phase" / "circuit evaluation phase".
 struct InputProcEval {
     delta: Delta,
     pending_input: usize,
@@ -512,7 +512,7 @@ impl ContribStep2 {
     }
 }
 
-// Receives its message from [`ContribStep2`] which is a (large) vector of `AND` shares
+/// Receives its message from [`ContribStep2`] which is a (large) vector of `AND` shares.
 impl EvalStep3 {
     fn run(self, msg: &[u8]) -> TandemResult<EvalStep4> {
         let (state, replies) = ot_ands3_update_z2_eval(self.0, msg)?;
@@ -541,7 +541,6 @@ impl EvalStep4 {
     }
 }
 
-// sends message to EvalStep5
 impl ContribStep4 {
     fn run(self, msg: &[u8], circuit: &Circuit) -> TandemResult<AndsBucketingState> {
         let (msg1, msg2): (Msg, Msg) = deserialize(msg)?;
@@ -584,7 +583,7 @@ impl EvalStep6 {
 
 type StateResult<S> = Result<(S, Msg), Error>;
 
-// bucket sizes according to WRK17a, Table 4 for ρ = 40 (rho)
+/// Calculates the bucket size according to WRK17a, Table 4 for statistical security ρ = 40 (rho).
 fn bucket_size(circuit: &Circuit) -> usize {
     match circuit.and_gates() {
         n if n >= 280_000 => 3,
@@ -719,8 +718,8 @@ fn ot_ands1(mut state: OtInitState4, msg: &[u8], circuit: &Circuit) -> StateResu
     assert_eq!(0, (state.blocks - abits_blocks) % 3);
 
     // split state.abits into 2 parts:
-    // 1. the first part is used for the wires which equals the number of input and AND gates aligned by
-    //    BLOCK_SIZE
+    // 1. the first part is used for the wires which equals the number of input and AND gates
+    //    aligned by BLOCK_SIZE
     // 2. the latter part is used for AND triples
 
     let wire_abits_start = (state.blocks - abits_blocks) * BLOCK_SIZE;
@@ -816,7 +815,7 @@ impl OtAndsState1 {
     }
 }
 
-/// implementation of Protoocol Π_{LaAND} steps 4a+4b (resp. 5a+5b) of WRK17a
+/// Implements sub-protoocol Π_{LaAND} steps 4a+4b (resp. 5a+5b) of WRK17a.
 fn compute_u(delta: &Delta, and_bits: &[BitShare]) -> Vec<MacType> {
     let mut msgs = Vec::with_capacity(and_bits.len() / 3);
     for i in (0..and_bits.len()).step_by(3) {
@@ -843,7 +842,6 @@ fn compute_u(delta: &Delta, and_bits: &[BitShare]) -> Vec<MacType> {
             );
         let t1 = hash_keys(k_x1, k_y1 ^ k_z1 ^ (if b_y2 ^ b_z2 { delta.0 } else { 0 }));
         let u1 = t1 ^ hash_keys(k_x1 ^ delta.0, k_z1 ^ (if b_z2 { delta.0 } else { 0 }));
-        // @Franziskus: how to best implement this choice?
         let u_for_other_party = if b_x2 { u1 } else { u0 };
         msgs.push(u_for_other_party);
     }
@@ -1113,7 +1111,7 @@ fn mac(delta: &Delta, value: u128, bit: bool) -> u128 {
     value ^ (if bit { delta.0 } else { 0 })
 }
 
-// Implements Step 2 + 3 + 4a of Π_{2pc}
+/// Implements Step 2 + 3 + 4a of Π_{2pc}.
 fn preprocessing_assign_masks(
     abits: Vec<BitShare>,
     rng: &mut ChaCha20Rng,
@@ -1155,10 +1153,11 @@ fn preprocessing_assign_masks(
     masks
 }
 
-// collects xor of authenticated bits relating to input wires to AND gates
-// Returns:
-//  Tuple #1: XOR of authenticated bits of left-hand side input
-//  Tuple #2: like #1 but for right-hand side
+/// Collects XOR of authenticated bits relating to input wires to AND gates.
+///
+/// Returns:
+///   - Tuple #1: XOR of authenticated bits of left-hand side input
+///   - Tuple #2: like #1 but for right-hand side
 fn preprocessing_and_gate_bits(
     circuit: &Circuit,
     masks: &[WireMask],
@@ -1179,15 +1178,15 @@ fn preprocessing_and_gate_bits(
     (lhs_bits, rhs_bits)
 }
 
-// implements the `Π_{aAND}` functionality
-//
-// the protocol "consumes" authenticated AND triples from previous steps and returns
-// a new vector with AND triples for further processing
-//
-//
-// function `init`: starts the process yielding bits (`d'` and `d''` in Π_{aAND} terms)
-//   and their respective macs
-// function `finish`: upon receiving upstream bits, computes the final authenticated AND triples
+/// Implements the `Π_{aAND}` functionality.
+///
+/// The protocol "consumes" authenticated AND triples from previous steps and returns a new vector
+/// with AND triples for further processing.
+///
+///   - Function `init`: Starts the process yielding bits (`d'` and `d''` in Π_{aAND} terms) and
+///     their respective macs.
+///   - Function `finish`: Upon receiving upstream bits, computes the final authenticated AND
+///     triples.
 impl AndsBucketingState {
     fn init(state: OtAndsState5, circuit: &Circuit) -> StateResult<AndsBucketingState> {
         fn new_permutation(mut rng: ChaCha20Rng, total_abits: usize) -> Vec<u32> {
@@ -1271,7 +1270,7 @@ impl AndsBucketingState {
         Ok((state, msg))
     }
 
-    // Protocol `Π_{aAND}` Step 3.a (checking step), and 3.b
+    /// Implements sub-protocol `Π_{aAND}` Step 3.a (checking step), and 3.b.
     fn update_triples(self, msg: &[u8]) -> Result<AndsBucketingState, Error> {
         assert!(self.bucketing_bits.len() == self.length * self.bucket_size);
 
@@ -1652,10 +1651,9 @@ fn compute_hashes(
 
 impl InputProcContrib {
     fn run(mut self, msg: &[u8], circuit: &Circuit, input: &[bool]) -> TandemResult<()> {
-        /*
-         * P_B sends its mask to P_A which then returns masked input
-         * plus label to P_B for final circuit evaluation
-         */
+        
+        // P_B sends its mask to P_A which then returns masked input plus label to P_B for final
+        // circuit evaluation
         let (shares, inputs): (Vec<InputMaskShare>, Vec<(u32, bool)>) = deserialize(msg)?;
         let mut evaluation_inputs = Vec::with_capacity(shares.len());
         for ((index, bit_share), input) in shares.iter().zip(input.iter()) {
@@ -1670,9 +1668,7 @@ impl InputProcContrib {
             evaluation_inputs.push((*index, label, my_input_masked));
         }
 
-        /*
-         * P_B sends masked bit to P_A so P_A can return its label
-         */
+        // P_B sends masked bit to P_A so P_A can return its label
         for (index, bit) in inputs {
             if circuit.gates()[index as usize] != Gate::InEval {
                 return Err(UnexpectedMessageType);
