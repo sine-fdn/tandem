@@ -30,7 +30,7 @@ pub(crate) struct Receiver {
     choice: bool,
 }
 
-/// The kind of messages exchanged between a [`super::Sender`] and a [`super::Receiver`].
+/// The kind of messages exchanged between a [`Sender`] and a [`Receiver`].
 pub(crate) mod message {
     use std::slice;
 
