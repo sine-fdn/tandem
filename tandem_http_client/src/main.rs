@@ -20,7 +20,7 @@ struct Cli {
 
     #[arg(
         long,
-        default_value = "https://alpha.m1.sine.dev",
+        default_value = "https://echo-server.sine.dev",
         help = "Base URL of a remote tandem http server. "
     )]
     url: url::Url,
