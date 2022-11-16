@@ -14,9 +14,9 @@ This repository consists of four crates:
 
 #### [`tandem`](tandem/)
 
-This crate includes SINE's Secure Multi-Party Computation engine, Tandem. It is a Rust library, implementing [WRK17](https://acmccs.github.io/papers/p21-wangA.pdf) as a non-blocking [Finite State Machine](https://en.wikipedia.org/wiki/Finite-state_machine) (FSM). 
+This crate includes SINE's Secure Multi-Party Computation engine, Tandem. It is a Rust library, implementing [WRK17](https://acmccs.github.io/papers/p21-wangA.pdf) as a non-blocking [Finite State Machine](https://en.wikipedia.org/wiki/Finite-state_machine) (FSM).
 
-Please note that, for the time being, Tandem only supports __two-party__ computation. 
+Please note that, for the time being, Tandem only supports __two-party__ computation.
 
 #### [`tandem_garble_interop`](tandem_garble_interop/)
 
@@ -82,7 +82,7 @@ tandem_http_client <PROGRAM> \
 --metadata <METADATA>
 ```
 
-The `[OPTIONS]` include the flag `--url`, allowing us to set the URL of the HTTP server to use. If none is provided, it defaults to the 'echo server' deployed by SINE: https://alpha.m1.sine.dev. (Run `tandem_http_client --help` for more information.)
+The `[OPTIONS]` include the flag `--url`, allowing us to set the URL of the HTTP server to use. If none is provided, it defaults to the 'echo server' deployed by SINE: https://echo-server.sine.dev. (Run `tandem_http_client --help` for more information.)
 
 #### 3. Running the Tandem Engine
 
