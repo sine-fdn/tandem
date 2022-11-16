@@ -1,0 +1,16 @@
+name: Fly Deploy
+on:
+  push:
+    branches:
+      - continuous-deployment
+env:
+  FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+jobs:
+  deploy:
+      name: Deploy 'echo-server' and playground
+      runs-on: ubuntu-latest
+      steps:
+        - uses: actions/checkout@v3
+        - uses: superfly/flyctl-actions/setup-flyctl@master
+        - run: flyctl deploy --config tandem_http_server/fly.toml --dockerfile tandem_http_server/Dockerfile --remote-only
+        - run: flyctl deploy --config tandem_http_client/fly.toml --dockerfile tandem_http_client/Dockerfile --remote-only
