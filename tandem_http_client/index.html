@@ -38,7 +38,7 @@
           <h1 class="text-lg">Playground for <a href="https://sine.foundation/library/002-smpc" alt="Secure
           Multi-Party Computation" style="text-decoration: underline #fef08a; text-decoration-thickness: 4px;">Secure
               Multi-Party
-              Computation</a> using SINE's <a href="https://github.com/sine-fdn/wrk17-alpha"
+              Computation</a> using SINE's <a href="https://github.com/sine-fdn/tandem"
               style="text-decoration: underline #fef08a; text-decoration-thickness: 4px;">Tandem engine</a>.
           </h1>
         </div>
@@ -113,7 +113,7 @@ pub fn main(a: i32, b: i32) -> i32 {
       const btn_compute = cell.getElementsByClassName("playground-btn-compute")[0];
       const output_div = cell.getElementsByClassName("playground-output-div")[0];
       btn_compute.addEventListener("click", async function () {
-        const url = "http:/localhost:8000";
+        const url = "https://echo-server.sine.dev";
         const source_code = editor.getValue();
         const function_name = cell.getElementsByClassName("playground-function-name")[0].value;
         const my_input = cell.getElementsByClassName("playground-private-input")[0].value;

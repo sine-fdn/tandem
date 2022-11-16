@@ -13,7 +13,7 @@ This crate includes
 
 ## CLI Client
 
-The CLI client provides a quick and easy way of running the Tandem engine. In order to use it, a Tandem HTTP server must already be running. If no server is specified, it will default to SINE's sample server at https://alpha.m1.sine.dev/.
+The CLI client provides a quick and easy way of running the Tandem engine. In order to use it, a Tandem HTTP server must already be running. If no server is specified, it will default to SINE's sample server at https://echo-server.sine.dev/.
 
 Use the following commands to install the CLI client:
 

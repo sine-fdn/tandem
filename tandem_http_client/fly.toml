@@ -1,6 +1,6 @@
-# fly.toml file generated for mpc-notebook on 2022-10-24T17:05:40+01:00
+# fly.toml file generated for tandem-playground on 2022-11-10T09:45:35Z
 
-app = "mpc-notebook"
+app = "tandem-playground"
 kill_signal = "SIGINT"
 kill_timeout = 5
 processes = []

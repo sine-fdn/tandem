@@ -1,6 +1,6 @@
-# fly.toml file generated for notebook-mpc-server on 2022-10-20T12:48:24+01:00
+# fly.toml file generated for tandem-echo-server on 2022-11-09T17:26:11Z
 
-app = "notebook-mpc-server"
+app = "tandem-echo-server"
 kill_signal = "SIGINT"
 kill_timeout = 5
 processes = []
@@ -23,8 +23,13 @@ processes = []
     type = "connections"
 
   [[services.ports]]
+    force_https = true
+    handlers = ["http"]
+    port = 80
+
+  [[services.ports]]
     handlers = ["tls", "http"]
-    port = 8000
+    port = 443
 
   [[services.tcp_checks]]
     grace_period = "1s"
