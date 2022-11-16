@@ -4,9 +4,9 @@
 //! which can then be used to seed the RNGs of both parties with the same seed.
 //!
 //! The protocol consists of:
-//!   1. calling [`init`] / [`init_rng`] to initialize the protocol
-//!      - thereby disclosing the tuple item #2 (commitment message) to the other party
-//!   2. calling [`serialize`] on the return coin share (tuple item #1 from `init`)
+//!   1. calling [`init`] to initialize the protocol, thereby disclosing the tuple item #2
+//!      (commitment message) to the other party
+//!   2. calling [`serialize`] on the return coin share (tuple item #1 from [`init`])
 //!   3. finishing the protocol by calling [`finish`] with the other party's coin commitment and
 //!      coin share messages
 use crate::Error;
