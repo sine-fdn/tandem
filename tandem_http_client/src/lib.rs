@@ -454,7 +454,14 @@ impl TandemSession {
     ) -> Result<(MessageLog, Option<MessageId>), Error> {
         let mut errors = vec![];
         for _ in 0..MAX_RETRIES {
-            match send_msgs(self.url.clone(), &self.request_headers, last_durably_received_offset, messages).await {
+            match send_msgs(
+                self.url.clone(),
+                &self.request_headers,
+                last_durably_received_offset,
+                messages,
+            )
+            .await
+            {
                 Ok(resp) => return Ok(resp),
                 Err(e) => errors.push(e),
             }
