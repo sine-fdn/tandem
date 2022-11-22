@@ -154,8 +154,8 @@ fn dialog<'a>(
     last_durably_received_offset: Option<u32>,
     messages: &Vec<(&Msg, MessageId)>,
 ) -> (MessageLog, Option<MessageId>) {
-    let dialog_uri = uri!(engine::dialog(engine_id, last_durably_received_offset));
-    let messages = bincode::serialize(messages).unwrap();
+    let dialog_uri = uri!(engine::dialog(engine_id));
+    let messages = bincode::serialize(&(last_durably_received_offset, messages)).unwrap();
     let res = client.post(dialog_uri).body(messages).dispatch();
     assert_eq!(res.status(), Status::Ok);
 
