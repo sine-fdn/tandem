@@ -24,7 +24,6 @@
     .CodeMirror {
       height: fit-content;
     }
-
   </style>
 </head>
 
@@ -55,6 +54,25 @@ pub fn main(a: i32, b: i32) -> i32 {
           </div>
         </div>
         <div class="mb-4">
+          <fieldset class="flex border shadow appearance-none rounded w-full py-2 px-3 text-gray-700 leading-tight">
+            <div class="text-gray-500">MPC Server</div>
+            <div class="form-check form-check-inline px-2">
+              <input
+                class="form-check-input rounded-full h-4 w-4 border border-gray-300 bg-white checked:bg-blue-600 checked:border-blue-600 focus:outline-none transition duration-200 mt-1 align-top bg-no-repeat bg-center bg-contain float-left mr-2 cursor-pointer"
+                type="radio" name="serverUrlRadioOptions" id="radioRemote" value="https://echo-server.sine.dev" checked>
+              <label class="form-check-label inline-block text-gray-800"
+                for="inlineRadio10">https://echo-server.sine.dev</label>
+            </div>
+            <div class="form-check form-check-inline">
+              <input
+                class="form-check-input rounded-full h-4 w-4 border border-gray-300 bg-white checked:bg-blue-600 checked:border-blue-600 focus:outline-none transition duration-200 mt-1 align-top bg-no-repeat bg-center bg-contain float-left mr-2 cursor-pointer"
+                type="radio" name="serverUrlRadioOptions" id="radioLocal" value="http://localhost:8000">
+              <label class="form-check-label inline-block text-gray-800"
+                for="inlineRadio10">http://localhost:8000</label>
+            </div>
+          </fieldset>
+        </div>
+        <div class="mb-4">
           <input
             class="playground-function-name shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
             type="text" placeholder="Function to Execute">
@@ -78,8 +96,8 @@ pub fn main(a: i32, b: i32) -> i32 {
             </button>
           </div>
           <div class="playground-output-div hidden md:flex md:items-center" class="mb-4">
-            <svg class="playground-spinner hidden animate-spin h-10 w-10 text-blue-500" xmlns="http://www.w3.org/2000/svg"
-              fill="none" viewBox="0 0 24 24">
+            <svg class="playground-spinner hidden animate-spin h-10 w-10 text-blue-500"
+              xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
               <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4">
               </circle>
               <path class="opacity-75" fill="currentColor"
@@ -91,77 +109,85 @@ pub fn main(a: i32, b: i32) -> i32 {
           </div>
         </div>
         <p class="text-center text-gray-500 text-xs">
-            SMPC Engine WASM Notebook by <a class="text-blue-400 hover:text-blue-500 transition duration-300 ease-in-out" href="https://sine.foundation/">SINE Foundation e.V.</a>
+          SMPC Engine WASM Notebook by <a class="text-blue-400 hover:text-blue-500 transition duration-300 ease-in-out"
+            href="https://sine.foundation/">SINE Foundation e.V.</a>
         </p>
     </div>
     <!-- Note the usage of `type=module` here as this is an ES6 module -->
     <script type="module">
-        import init, { MpcProgram, MpcData, compute } from './pkg/tandem_http_client.js';
+      import init, { MpcProgram, MpcData, compute } from './pkg/tandem_http_client.js';
 
-    const code_mirror_config = {
-      lineNumbers: true,
-      mode: "rust",
-      theme: "nord",
-    };
+      const code_mirror_config = {
+        lineNumbers: true,
+        mode: "rust",
+        theme: "nord",
+      };
 
-    const source_code_area = document.getElementsByClassName("playground-source-code")[0];
-    const editor = CodeMirror.fromTextArea(source_code_area, code_mirror_config);
-    const cell = document.getElementsByClassName("playground-cell")[0];
+      const source_code_area = document.getElementsByClassName("playground-source-code")[0];
+      const editor = CodeMirror.fromTextArea(source_code_area, code_mirror_config);
+      const cell = document.getElementsByClassName("playground-cell")[0];
 
-    const addCellListeners = (cell, editor) => {
-      const spinner = cell.getElementsByClassName("playground-spinner")[0];
-      const btn_compute = cell.getElementsByClassName("playground-btn-compute")[0];
-      const output_div = cell.getElementsByClassName("playground-output-div")[0];
-      btn_compute.addEventListener("click", async function () {
-        const url = "https://echo-server.sine.dev";
-        const source_code = editor.getValue();
-        const function_name = cell.getElementsByClassName("playground-function-name")[0].value;
-        const my_input = cell.getElementsByClassName("playground-private-input")[0].value;
-        const plaintext_metadata = cell.getElementsByClassName("playground-plaintext-metadata")[0].value;
-        spinner.classList.remove("hidden");
-        btn_compute.classList.add("cursor-not-allowed");
-        btn_compute.classList.add("opacity-50");
-        btn_compute.disabled = true;
+      const addCellListeners = (cell, editor) => {
+        const spinner = cell.getElementsByClassName("playground-spinner")[0];
+        const btn_compute = cell.getElementsByClassName("playground-btn-compute")[0];
+        const output_div = cell.getElementsByClassName("playground-output-div")[0];
+        btn_compute.addEventListener("click", async function () {
+          let radioButtons = document.getElementsByName('serverUrlRadioOptions');
 
-        let is_success = false;
-        const output = cell.getElementsByClassName("playground-output")[0];
-        output.classList.add("hidden");
-        try {
-          const t0 = performance.now();
+          let url = "";
+          for (let radio of radioButtons) {
+            if (radio.checked) {
+              url = radio.value;
+            }
+          }
+          const source_code = editor.getValue();
+          const function_name = cell.getElementsByClassName("playground-function-name")[0].value;
+          const my_input = cell.getElementsByClassName("playground-private-input")[0].value;
+          const plaintext_metadata = cell.getElementsByClassName("playground-plaintext-metadata")[0].value;
+          spinner.classList.remove("hidden");
+          btn_compute.classList.add("cursor-not-allowed");
+          btn_compute.classList.add("opacity-50");
+          btn_compute.disabled = true;
 
-          const mpc_program = new MpcProgram(source_code, function_name);
-          const info_about_gates = mpc_program.report_gates();
-          const t1 = performance.now();
+          let is_success = false;
+          const output = cell.getElementsByClassName("playground-output")[0];
+          output.classList.add("hidden");
+          try {
+            const t0 = performance.now();
 
-          const mpc_input = MpcData.from_string(mpc_program, my_input);
-          const result = (await compute(url, plaintext_metadata, mpc_program, mpc_input)).to_literal_string();
-          const t2 = performance.now();
+            const mpc_program = new MpcProgram(source_code, function_name);
+            const info_about_gates = mpc_program.report_gates();
+            const t1 = performance.now();
 
-          console.log(`Compilation: ${((t1 - t0) / 1000).toFixed(2)}s, MPC: ${((t2 - t1) / 1000).toFixed(2)}s, for ${info_about_gates}`);
+            const mpc_input = MpcData.from_string(mpc_program, my_input);
+            const result = (await compute(url, plaintext_metadata, mpc_program, mpc_input)).to_literal_string();
+            const t2 = performance.now();
 
-          output.innerHTML = result;
-          output.classList.remove("border-red-500");
-          output.classList.remove("text-red-500");
-          is_success = true;
-        } catch (e) {
-          output.innerHTML = e;
-          output.classList.add("border-red-500");
-          output.classList.add("text-red-500");
-        } finally {
-          output.classList.remove("hidden");
-          output_div.classList.remove("hidden");
-          spinner.classList.add("hidden");
-          btn_compute.classList.remove("cursor-not-allowed");
-          btn_compute.classList.remove("opacity-50");
-          btn_compute.disabled = false;
-        }
-      });
-    };
+            console.log(`Compilation: ${((t1 - t0) / 1000).toFixed(2)}s, MPC: ${((t2 - t1) / 1000).toFixed(2)}s, for ${info_about_gates}`);
 
-        init().then(() => {
-            console.log("Ready for running Secure Multi-Party Computation from WASM...");
-            addCellListeners(cell, editor);
+            output.innerHTML = result;
+            output.classList.remove("border-red-500");
+            output.classList.remove("text-red-500");
+            is_success = true;
+          } catch (e) {
+            output.innerHTML = e;
+            output.classList.add("border-red-500");
+            output.classList.add("text-red-500");
+          } finally {
+            output.classList.remove("hidden");
+            output_div.classList.remove("hidden");
+            spinner.classList.add("hidden");
+            btn_compute.classList.remove("cursor-not-allowed");
+            btn_compute.classList.remove("opacity-50");
+            btn_compute.disabled = false;
+          }
         });
+      };
+
+      init().then(() => {
+        console.log("Ready for running Secure Multi-Party Computation from WASM...");
+        addCellListeners(cell, editor);
+      });
     </script>
 </body>
 
