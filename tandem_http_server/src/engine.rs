@@ -62,7 +62,7 @@ pub(crate) fn create_session(
         engine_id: engine_id.clone(),
         request_headers: handled.request_headers,
     };
-    let c = Created::new(uri!(dialog(engine_id, Option::<u32>::None)).to_string()).body(Json(body));
+    let c = Created::new(uri!(dialog(engine_id)).to_string()).body(Json(body));
     Ok(c)
 }
 
@@ -79,22 +79,14 @@ pub(crate) fn delete_session(engine_id: String, r: &State<EngineRegistry>) -> Re
     }
 }
 
-#[options("/<_engine_id>?<_last_durably_received_offset>")]
-pub(crate) fn preflight_response_dialog(
-    _engine_id: String,
-    _last_durably_received_offset: Option<u32>,
-) {
-}
-
-#[post("/<engine_id>?<last_durably_received_offset>", data = "<messages>")]
+#[post("/<engine_id>", data = "<messages>")]
 pub(crate) async fn dialog<'a>(
     engine_id: String,
-    last_durably_received_offset: Option<u32>,
     messages: Data<'_>,
     registry: &State<EngineRegistry>,
 ) -> Result<ByteStream![Vec<u8>], Error> {
     let stream = messages.open(20.mebibytes());
-    let messages: Vec<(Vec<u8>, MessageId)> =
+    let (last_durably_received_offset, messages): (Option<u32>, Vec<(Vec<u8>, MessageId)>) =
         bincode::deserialize(&stream.into_bytes().await.unwrap())?;
 
     let engine = registry.lookup(&engine_id)?;
@@ -129,7 +121,6 @@ pub fn stage(handle_input: HandleMpcRequestFn) -> AdHoc {
                 routes![
                     preflight_response_create_session,
                     preflight_response_delete_session,
-                    preflight_response_dialog,
                     create_session,
                     delete_session,
                     dialog

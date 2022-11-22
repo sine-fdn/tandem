@@ -452,15 +452,9 @@ impl TandemSession {
         last_durably_received_offset: Option<u32>,
         messages: &[(&Msg, MessageId)],
     ) -> Result<(MessageLog, Option<MessageId>), Error> {
-        let mut url = self.url.clone();
-        if let Some(offset) = last_durably_received_offset {
-            url.query_pairs_mut()
-                .append_pair("last_durably_received_offset", &offset.to_string());
-        }
-
         let mut errors = vec![];
         for _ in 0..MAX_RETRIES {
-            match send_msgs(url.clone(), &self.request_headers, messages).await {
+            match send_msgs(self.url.clone(), &self.request_headers, last_durably_received_offset, messages).await {
                 Ok(resp) => return Ok(resp),
                 Err(e) => errors.push(e),
             }
@@ -479,10 +473,12 @@ async fn send_new_session(url: Url, session: &NewSession) -> Result<EngineCreati
 async fn send_msgs(
     url: Url,
     request_headers: &HashMap<String, String>,
+    last_durably_received_offset: Option<u32>,
     msgs: &[(&Msg, MessageId)],
 ) -> Result<(MessageLog, Option<MessageId>), Error> {
     let client = reqwest::Client::new();
-    let mut req = client.post(url).body(bincode::serialize(msgs)?);
+    let body = bincode::serialize(&(last_durably_received_offset, msgs))?;
+    let mut req = client.post(url).body(body);
     for (k, v) in request_headers.iter() {
         req = req.header(k, v);
     }
