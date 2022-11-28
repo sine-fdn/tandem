@@ -1,6 +1,6 @@
 # Tandem
 
-<img src="https://avatars.githubusercontent.com/u/67928740?s=200&v=4" alt="SINE" height="150" align="right"/>
+<img alt="SINE Logo" height="150" align="right" src="https://user-images.githubusercontent.com/358580/204315360-9e4916df-5080-4e7c-bd5b-7e002309b9db.png">
 
 [Secure Multi-Party Computation (SMPC)](https://sine.foundation/library/002-smpc) is a cryptographic field with the goal of allowing two or more parties to cooperatively compute a result while keeping their inputs private.
 
