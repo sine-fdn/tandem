@@ -9,7 +9,6 @@ license = "MIT"
 categories = ["cryptography", "command-line-utilities"]
 keywords = [
     "crypto",
-    "protocol",
     "secure-computation",
     "garbled-circuits",
     "circuit-description",
