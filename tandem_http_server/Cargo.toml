@@ -27,12 +27,12 @@ blake3 = "1.3"
 url = "2.3"
 
 # # IF YOU WANT TO BUILD main.rs WITHOUT ANY FEATURES (FOR DEV):
-# tandem_garble_interop = { path = "../tandem_garble_interop" }
+# tandem_garble_interop = { version = "0.1.0", path = "../tandem_garble_interop" }
 # figment = { version = "0.10", features = ["env", "toml", "json"] }
 # serde = { version = "1.0" }
 
 # IF YOU WANT TO BUILD main.rs ONLY WITH `bin` FEATURE (FOR RELEASE):
-tandem_garble_interop = { path = "../tandem_garble_interop", optional = true }
+tandem_garble_interop = { version = "0.1.0", path = "../tandem_garble_interop", optional = true }
 figment = { version = "0.10", features = [
     "env",
     "toml",
@@ -48,7 +48,7 @@ name = "tandem_http_server"
 required-features = ["bin"]
 
 [dev-dependencies]
-tandem_garble_interop = { path = "../tandem_garble_interop" }
+tandem_garble_interop = { version = "0.1.0", path = "../tandem_garble_interop" }
 
 [lib]
 bench = false
