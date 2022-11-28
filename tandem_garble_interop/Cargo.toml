@@ -2,9 +2,22 @@
 name = "tandem_garble_interop"
 version = "0.1.0"
 edition = "2021"
+rust-version = "1.60.0"
+description = "Interopability between the Tandem SMPC engine and the Garble programming language"
+repository = "https://github.com/sine-fdn/tandem/tree/main/tandem_garble_interop"
+license = "MIT"
+categories = ["cryptography"]
+keywords = [
+    "crypto",
+    "protocol",
+    "secure-computation",
+    "garbled-circuits",
+    "circuit-description",
+    "smpc",
+]
 
 [dependencies]
-tandem = { version = "0.0.1-alpha-do-not-use", path = "../tandem" }
+tandem = { version = "0.1.0", path = "../tandem" }
 garble_lang = { version = "0.1.7", features = ["serde"] }
 
 [lib]

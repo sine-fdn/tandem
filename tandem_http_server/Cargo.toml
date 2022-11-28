@@ -2,9 +2,22 @@
 name = "tandem_http_server"
 version = "0.1.0"
 edition = "2021"
+rust-version = "1.60.0"
+description = "HTTP server for the Tandem SMPC engine"
+repository = "https://github.com/sine-fdn/tandem/tree/main/tandem_http_server"
+license = "MIT"
+categories = ["cryptography", "command-line-utilities"]
+keywords = [
+    "crypto",
+    "protocol",
+    "secure-computation",
+    "garbled-circuits",
+    "circuit-description",
+    "smpc",
+]
 
 [dependencies]
-tandem = { version = "0.0.1-alpha-do-not-use", path = "../tandem" }
+tandem = { version = "0.1.0", path = "../tandem" }
 rocket = { version = "0.5.0-rc.1", features = [ "json" ]}
 rand = "0.8.3"
 rand_chacha = "0.3.1"

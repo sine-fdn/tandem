@@ -1,0 +1,31 @@
+on:
+  push:
+    tags:        
+      - 'v*'
+
+name: Publish
+
+jobs:
+  publish:
+    name: Publish
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+      - run: cargo test --all-features
+      - run: cargo clippy -- -Dwarnings
+      - run: sed -i '' -e 's/tandem_garble_interop/#tandem_garble_interop/' tandem/Cargo.toml
+      - run: cargo publish -p tandem --allow-dirty
+        env:
+          CRATES_TOKEN: ${{ secrets.CRATES_TOKEN }}
+      - run: cargo publish -p tandem_garble_interop --allow-dirty
+        env:
+          CRATES_TOKEN: ${{ secrets.CRATES_TOKEN }}
+      - run: cargo publish -p tandem_http_client --allow-dirty
+        env:
+          CRATES_TOKEN: ${{ secrets.CRATES_TOKEN }}
+      - run: cargo publish -p tandem_http_server --allow-dirty
+        env:
+          CRATES_TOKEN: ${{ secrets.CRATES_TOKEN }}

@@ -1969,7 +1969,7 @@ dependencies = [
 
 [[package]]
 name = "tandem"
-version = "0.0.1-alpha-do-not-use"
+version = "0.1.0"
 dependencies = [
  "bincode",
  "blake3",
