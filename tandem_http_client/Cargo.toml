@@ -40,7 +40,7 @@ serde = { version = "1.0", features = ["derive"] }
 serde-wasm-bindgen = "0.4"
 serde_json = "1.0"
 reqwest = { version = "0.11", features = ["json"] }
-tandem_garble_interop = { path = "../tandem_garble_interop" }
+tandem_garble_interop = { version = "0.1.0", path = "../tandem_garble_interop" }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 tokio = { version = "1", features = ["full"] }
