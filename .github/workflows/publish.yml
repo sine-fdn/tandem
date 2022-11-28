@@ -14,10 +14,10 @@ jobs:
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
+      - run: sed -i 's/tandem_garble_interop/#tandem_garble_interop/' tandem/Cargo.toml
       - run: cargo build --features "bin"
       - run: cargo test
       - run: cargo clippy -- -Dwarnings
-      - run: sed -i '' -e 's/tandem_garble_interop/#tandem_garble_interop/' tandem/Cargo.toml
       - run: cargo publish -p tandem --allow-dirty
         env:
           CRATES_TOKEN: ${{ secrets.CRATES_TOKEN }}
