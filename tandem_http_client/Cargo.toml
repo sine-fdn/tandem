@@ -2,6 +2,19 @@
 name = "tandem_http_client"
 version = "0.1.0"
 edition = "2021"
+rust-version = "1.60.0"
+description = "HTTP client for the Tandem SMPC engine"
+repository = "https://github.com/sine-fdn/tandem/tree/main/tandem_http_client"
+license = "MIT"
+categories = ["cryptography", "command-line-utilities"]
+keywords = [
+    "crypto",
+    "protocol",
+    "secure-computation",
+    "garbled-circuits",
+    "circuit-description",
+    "smpc",
+]
 
 
 [[bin]]
@@ -19,7 +32,7 @@ default = ["console_error_panic_hook"]
 bin = []
 
 [dependencies]
-tandem = { version = "0.0.1-alpha-do-not-use", path = "../tandem" }
+tandem = { version = "0.1.0", path = "../tandem" }
 url = "2.3"
 rand_chacha = "0.3.1"
 bincode = "1.3"
