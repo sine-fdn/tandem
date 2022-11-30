@@ -8,6 +8,12 @@ Our aim at SINE is to make advanced technology, such as SMPC, available to as ma
 
 Tandem, our SMPC engine, aims at fulfilling our vision by providing an easy to use framework to apply this technology wherever there is a need to share data privately, without a third-party trustee.
 
+## Encryptle - Tandem in Action
+
+Tandem is fast enough to be used for practical applications. Check out Encryptle, a Wordle clone that runs entirely over SMPC:
+
+https://encryptle.sine.foundation/
+
 ## Quick Start
 
 The easiest way to try out Tandem is by using our demo server, either by using our online playground or by connecting to it from your local machine using our command line client:
