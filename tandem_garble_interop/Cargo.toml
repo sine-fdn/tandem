@@ -1,6 +1,6 @@
 [package]
 name = "tandem_garble_interop"
-version = "0.2.1"
+version = "0.3.0"
 edition = "2021"
 rust-version = "1.60.0"
 description = "Interopability between the Tandem SMPC engine and the Garble programming language"
@@ -16,7 +16,7 @@ keywords = [
 ]
 
 [dependencies]
-tandem = { version = "0.2.1", path = "../tandem" }
+tandem = { version = "0.3.0", path = "../tandem" }
 garble_lang = { version = "0.1.7", features = ["serde"] }
 
 [lib]
