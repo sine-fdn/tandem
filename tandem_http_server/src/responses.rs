@@ -8,16 +8,26 @@ use std::io::Cursor;
 #[derive(Serialize, Deserialize, Debug, PartialEq, Eq)]
 #[serde(crate = "rocket::serde")]
 #[serde(tag = "error", content = "args")]
-pub enum Error {
+pub(crate) enum Error {
     CircuitHashMismatch,
     UnexpectedWireFormat(String),
     MpcRequestRejected(String),
-    DuplicateEngineId { engine_id: String },
+    DuplicateEngineId {
+        engine_id: String,
+    },
     UnexpectedMessageId,
-    NoSuchEngineId { engine_id: String },
-    Internal { message: String },
+    NoSuchEngineId {
+        engine_id: String,
+    },
+    Internal {
+        message: String,
+    },
     BincodeError,
     Engine,
+    IncompatibleVersions {
+        client_version: String,
+        server_version: String,
+    },
 }
 
 impl<'r, 'o: 'r> Responder<'r, 'o> for Error {
@@ -36,6 +46,7 @@ impl<'r, 'o: 'r> Responder<'r, 'o> for Error {
 impl Error {
     fn status(&self) -> Status {
         match self {
+            Error::IncompatibleVersions { .. } => Status::BadRequest,
             Error::CircuitHashMismatch => Status::BadRequest,
             Error::UnexpectedWireFormat(_) => Status::BadRequest,
             Error::MpcRequestRejected(_) => Status::BadRequest,

@@ -171,6 +171,7 @@ fn new_session<'a>(client: &'a Client, program: String, input: String) -> LocalR
         program,
         function: "main".to_string(),
         circuit_hash: circuit.gates.blake3_hash(),
+        client_version: env!("CARGO_PKG_VERSION").to_string(),
     };
     client.post(create_sess_uri).json(&session).dispatch()
 }

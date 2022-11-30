@@ -3,7 +3,7 @@
 use crate::{
     msg_queue::MessageId,
     requests::NewSession,
-    responses::Error::{self, *},
+    responses::Error,
     state::{EngineRef, EngineRegistry},
     types::{EngineCreationResult, HandleMpcRequestFn},
 };
@@ -31,6 +31,13 @@ pub(crate) fn create_session(
     r: &State<EngineRegistry>,
     request: Json<NewSession>,
 ) -> Result<Created<Json<EngineCreationResult>>, Error> {
+    let server_version = env!("CARGO_PKG_VERSION").to_string();
+    if request.client_version != server_version {
+        return Err(Error::IncompatibleVersions {
+            client_version: request.client_version.clone(),
+            server_version,
+        });
+    }
     let invocation = crate::types::MpcRequest {
         plaintext_metadata: request.plaintext_metadata.clone(),
         program: request.program.clone(),
@@ -41,7 +48,7 @@ pub(crate) fn create_session(
         .map_err(Error::MpcRequestRejected)?;
     let circuit_hash = handled.circuit.blake3_hash();
     if circuit_hash != request.circuit_hash {
-        return Err(CircuitHashMismatch);
+        return Err(Error::CircuitHashMismatch);
     }
 
     let mut rng = ChaCha20Rng::from_entropy();
@@ -55,12 +62,13 @@ pub(crate) fn create_session(
     let inserted = r.insert_engine(engine_id.clone(), er);
 
     if !inserted {
-        return Err(DuplicateEngineId { engine_id });
+        return Err(Error::DuplicateEngineId { engine_id });
     }
 
     let body = EngineCreationResult {
         engine_id: engine_id.clone(),
         request_headers: handled.request_headers,
+        server_version,
     };
     let c = Created::new(uri!(dialog(engine_id)).to_string()).body(Json(body));
     Ok(c)
@@ -75,7 +83,7 @@ pub(crate) fn delete_session(engine_id: String, r: &State<EngineRegistry>) -> Re
     if removed {
         Ok(())
     } else {
-        Err(NoSuchEngineId { engine_id })
+        Err(Error::NoSuchEngineId { engine_id })
     }
 }
 
