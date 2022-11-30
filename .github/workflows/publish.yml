@@ -22,12 +22,12 @@ jobs:
       - run: cargo publish -p tandem --allow-dirty
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
-      - run: sleep 10 && cargo publish -p tandem_garble_interop --allow-dirty
+      - run: sleep 60 && cargo publish -p tandem_garble_interop --allow-dirty
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
-      - run: sleep 10 && cargo publish -p tandem_http_client --allow-dirty
+      - run: sleep 60 && cargo publish -p tandem_http_client --allow-dirty
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
-      - run: sleep 10 && cargo publish -p tandem_http_server --allow-dirty
+      - run: cargo publish -p tandem_http_server --allow-dirty
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
