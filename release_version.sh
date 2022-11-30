@@ -25,4 +25,4 @@ done
 cargo build --all-features && \
     git commit -am "bump to v$VERSION" && \
     git tag -a "v$VERSION" -m "v$VERSION" && \
-    git push --tag
+    git push --follow-tags
