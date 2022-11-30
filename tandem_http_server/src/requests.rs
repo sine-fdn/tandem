@@ -8,4 +8,5 @@ pub struct NewSession {
     pub program: String,
     pub function: String,
     pub circuit_hash: CircuitBlake3Hash,
+    pub client_version: String,
 }

@@ -26,19 +26,6 @@ pub struct MpcSession {
     pub request_headers: HashMap<String, String>,
 }
 
-#[derive(Debug, PartialEq, Eq)]
-pub struct EngineMessages {
-    log: MessageLog,
-    last_durably_received_client_event_offset: MessageId,
-}
-
-#[derive(Serialize, Deserialize, Debug, PartialEq, Eq)]
-#[serde(crate = "rocket::serde")]
-pub struct EngineCreationResult {
-    pub engine_id: String,
-    pub request_headers: HashMap<String, String>,
-}
-
 /// A request by a client to start a Multi-Party Computation.
 pub struct MpcRequest {
     /// Plaintext freely chosen by the client to influence the server's choice of its input.
@@ -47,4 +34,18 @@ pub struct MpcRequest {
     pub program: String,
     /// The name of the function in the Garble program to execute using MPC.
     pub function: String,
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub(crate) struct EngineMessages {
+    log: MessageLog,
+    last_durably_received_client_event_offset: MessageId,
+}
+
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq)]
+#[serde(crate = "rocket::serde")]
+pub(crate) struct EngineCreationResult {
+    pub engine_id: String,
+    pub request_headers: HashMap<String, String>,
+    pub server_version: String,
 }

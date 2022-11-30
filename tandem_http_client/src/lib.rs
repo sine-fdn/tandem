@@ -28,8 +28,6 @@ use tandem_garble_interop::{
 pub use tandem_garble_interop::{Literal, VariantLiteral};
 use url::Url;
 
-const MAX_RETRIES: usize = 10;
-
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen::{prelude::wasm_bindgen, JsValue};
 
@@ -370,12 +368,14 @@ struct NewSession {
     program: String,
     function: String,
     circuit_hash: CircuitBlake3Hash,
+    client_version: String,
 }
 
 #[derive(Deserialize, Debug, PartialEq, Eq)]
 struct EngineCreationResult {
     engine_id: String,
     request_headers: HashMap<String, String>,
+    server_version: String,
 }
 
 impl TandemClient {
@@ -390,15 +390,18 @@ impl TandemClient {
         function: String,
         plaintext_metadata: String,
     ) -> Result<TandemSession, Error> {
+        let client_version = env!("CARGO_PKG_VERSION").to_string();
         let req = NewSession {
             plaintext_metadata,
             program: source_code,
             function,
             circuit_hash: circuit.blake3_hash(),
+            client_version: client_version.clone(),
         };
         let EngineCreationResult {
             engine_id,
             request_headers,
+            server_version: _server_version,
         } = send_new_session(self.url.clone(), &req).await?;
         let url = self.url.join(&engine_id)?;
 
@@ -452,21 +455,13 @@ impl TandemSession {
         last_durably_received_offset: Option<u32>,
         messages: &[(&Msg, MessageId)],
     ) -> Result<(MessageLog, Option<MessageId>), Error> {
-        let mut errors = vec![];
-        for _ in 0..MAX_RETRIES {
-            match send_msgs(
-                self.url.clone(),
-                &self.request_headers,
-                last_durably_received_offset,
-                messages,
-            )
-            .await
-            {
-                Ok(resp) => return Ok(resp),
-                Err(e) => errors.push(e),
-            }
-        }
-        Err(Error::MaxRetriesExceeded(errors))
+        send_msgs(
+            self.url.clone(),
+            &self.request_headers,
+            last_durably_received_offset,
+            messages,
+        )
+        .await
     }
 }
 
@@ -532,8 +527,6 @@ pub enum Error {
     BincodeError,
     /// The client's message id did not match the server's message id.
     MessageOffsetMismatch,
-    /// The request failed after exceeding the maximum number of retries.
-    MaxRetriesExceeded(Vec<Error>),
 }
 
 impl From<bincode::Error> for Error {
@@ -588,13 +581,6 @@ impl std::fmt::Display for Error {
                 f,
                 "The client's message id did not match the server's message id."
             ),
-            Error::MaxRetriesExceeded(errs) => {
-                write!(f, "The request failed after {MAX_RETRIES} retries: ")?;
-                for e in errs {
-                    e.fmt(f)?;
-                }
-                Ok(())
-            }
         }
     }
 }
