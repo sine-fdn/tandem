@@ -1,3 +1,5 @@
+use std::vec;
+
 use blake3::Hasher;
 
 use crate::Error;
@@ -6,18 +8,17 @@ use crate::Error;
 pub type GateIndex = u32;
 
 /// A circuit of AND, XOR and NOT gates that can be executed using MPC.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Circuit {
     /// A collection of connected gates, each implicitly identified by its index in the vector.
     gates: Vec<Gate>,
     /// The output wires of the gates that are exposed as outputs of the whole circuit.
     output_gates: Vec<GateIndex>,
-
-    /// total number of AND gantes in the circuit
+    /// Total number of AND gates in the circuit.
     and_gates: usize,
-    /// number of evaluator input bits
+    /// Number of evaluator input bits.
     eval_inputs: usize,
-    /// number of contributor input bits
+    /// Number of contributor input bits.
     contrib_inputs: usize,
 }
 
@@ -71,6 +72,72 @@ impl Circuit {
             eval_inputs,
             contrib_inputs,
         }
+    }
+
+    /// Converts a circuit written in ["Bristol
+    /// Fashion"](https://homes.esat.kuleuven.be/~nsmart/MPC/) to Tandem's circuit format.
+    pub fn from_bristol_format(bristol_circuit: &str) -> Self {
+        // Break .txt into lines treating each separately.
+        let lines: Vec<&str> = bristol_circuit.split("\n").collect();
+        // The second line contains the number of input values (niv) and the amount of wires (and
+        // bits) each of them uses. As here we will only use circuits with two parties, the first
+        // piece of information is ignored.
+        let input_values: Vec<&str> = lines[1].split(" ").collect();
+        // The second number on the input_values vector is the amount of bits taken by the Contributor's input.
+        let contrib_bits = input_values[1].parse::<u32>().unwrap();
+        // The third number on the input_values vector is the amount of bits taken by the Evaluators's input.
+        let eval_bits = input_values[2].parse::<u32>().unwrap();
+        // The third line contains the number of output values and the amount of wires (and bits) it
+        // uses. Here, the first piece of information will always be 1 and is hence ignored.
+        let output_values: Vec<&str> = lines[2].split(" ").collect();
+        // The second element of output_values is the amount of bits taken by the output.
+        let output_bits = output_values[1].parse::<u32>().unwrap();
+
+        let mut gates = vec![];
+
+        let mut contrib_inputs = vec![Gate::InContrib; contrib_bits as usize];
+
+        let mut eval_inputs = vec![Gate::InEval; eval_bits as usize];
+
+        gates.append(&mut contrib_inputs);
+        gates.append(&mut eval_inputs);
+
+        let mut output_gates = vec![];
+
+        for i in 0..lines.len() {
+            // In the documents from KU Leuven, the third line is always blank. Yet, I've seen .txt
+            // files following the Bristol Fashion that do not do this.
+            if lines[i] == "" || i < 4 {
+                continue;
+            }
+
+            let gate_vec: Vec<&str> = lines[i].split(" ").collect();
+
+            let gate = match gate_vec.last() {
+                Some(&"XOR") => Gate::Xor(
+                    gate_vec[2].parse::<u32>().unwrap(),
+                    gate_vec[3].parse::<u32>().unwrap(),
+                ),
+                Some(&"AND") => Gate::And(
+                    gate_vec[2].parse::<u32>().unwrap(),
+                    gate_vec[3].parse::<u32>().unwrap(),
+                ),
+                Some(&"INV") => Gate::Not(gate_vec[2].parse::<u32>().unwrap()),
+                // TO DO: replace with appropriate arm or different strategy.
+                _ => Gate::InEval,
+            };
+
+            gates.push(gate);
+        }
+
+        // I am not sure, but it seems to me that the output gates are those which have the highest
+        // possible numbered wires. The reason why I thought so is that these seem to be the wires
+        // that are not in turn used as inputs. It might, however, have been a coincidence.
+        for i in 0..=output_bits {
+            output_gates.push((gates.len() - i as usize) as u32)
+        }
+
+        Circuit::new(gates, output_gates)
     }
 
     /// Calculates the blake3 hash of the circuit.
