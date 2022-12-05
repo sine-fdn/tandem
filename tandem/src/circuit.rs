@@ -1,4 +1,4 @@
-use std::{num::ParseIntError, vec};
+use std::vec;
 
 use blake3::Hasher;
 
@@ -8,7 +8,7 @@ use crate::Error;
 pub type GateIndex = u32;
 
 /// A circuit of AND, XOR and NOT gates that can be executed using MPC.
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Circuit {
     /// A collection of connected gates, each implicitly identified by its index in the vector.
     gates: Vec<Gate>,
@@ -79,20 +79,20 @@ impl Circuit {
     pub fn from_bristol_format(bristol_circuit: &str) -> Result<Self, Error> {
         // Break .txt into lines treating each separately.
         let lines: Vec<&str> = bristol_circuit
-            .split("\n")
+            .split('\n')
             .filter(|l| !l.is_empty())
             .collect();
         // The second line contains the number of input values (niv) and the amount of wires (and
         // bits) each of them uses. As here we will only use circuits with two parties, the first
         // piece of information is ignored.
-        let input_values: Vec<&str> = lines[1].split(" ").collect();
+        let input_values: Vec<&str> = lines[1].split(' ').collect();
         // The second number on the input_values vector is the amount of bits taken by the Contributor's input.
         let contrib_bits = input_values[1].parse::<u32>().unwrap();
         // The third number on the input_values vector is the amount of bits taken by the Evaluators's input.
         let eval_bits = input_values[2].parse::<u32>().unwrap();
         // The third line contains the number of output values and the amount of wires (and bits) it
         // uses. Here, the first piece of information will always be 1 and is hence ignored.
-        let output_values: Vec<&str> = lines[2].split(" ").collect();
+        let output_values: Vec<&str> = lines[2].split(' ').collect();
         // The second element of output_values is the amount of bits taken by the output.
         let output_bits = output_values[1].parse::<u32>().unwrap();
 
@@ -105,32 +105,29 @@ impl Circuit {
         gates.append(&mut contrib_inputs);
         gates.append(&mut eval_inputs);
 
-        let mut output_gates = vec![];
+        let mut gates_with_wires: Vec<(Gate, u32)> = vec![];
 
         for i in 3..lines.len() {
-            let gate_vec: Vec<&str> = lines[i].split(" ").collect();
+            let gate_vec: Vec<&str> = lines[i].split(' ').collect();
 
-            let gate = match gate_vec.last() {
-                Some(&"XOR") => Gate::Xor(
-                    gate_vec[2]
-                        .parse::<u32>()
-                        .unwrap_or_else(|e| panic!("{e}")),
-                    gate_vec[3]
-                        .parse::<u32>()
-                        .unwrap_or_else(|e| panic!("{e}")),
+            let gate_with_wire = match gate_vec.last() {
+                Some(&"XOR") => (
+                    Gate::Xor(
+                        gate_vec[2].parse::<u32>().unwrap_or_else(|e| panic!("{e}")),
+                        gate_vec[3].parse::<u32>().unwrap_or_else(|e| panic!("{e}")),
+                    ),
+                    gate_vec[4].parse::<u32>().unwrap_or_else(|e| panic!("{e}")),
                 ),
-                Some(&"AND") => Gate::And(
-                    gate_vec[2]
-                        .parse::<u32>()
-                        .unwrap_or_else(|e| panic!("{e}")),
-                    gate_vec[3]
-                        .parse::<u32>()
-                        .unwrap_or_else(|e| panic!("{e}")),
+                Some(&"AND") => (
+                    Gate::And(
+                        gate_vec[2].parse::<u32>().unwrap_or_else(|e| panic!("{e}")),
+                        gate_vec[3].parse::<u32>().unwrap_or_else(|e| panic!("{e}")),
+                    ),
+                    gate_vec[4].parse::<u32>().unwrap_or_else(|e| panic!("{e}")),
                 ),
-                Some(&"INV") => Gate::Not(
-                    gate_vec[2]
-                        .parse::<u32>()
-                        .unwrap_or_else(|e| panic!("{e}")),
+                Some(&"INV") => (
+                    Gate::Not(gate_vec[2].parse::<u32>().unwrap_or_else(|e| panic!("{e}"))),
+                    gate_vec[3].parse::<u32>().unwrap_or_else(|e| panic!("{e}")),
                 ),
                 x => {
                     println!("{:?}", x);
@@ -138,10 +135,18 @@ impl Circuit {
                 }
             };
 
-            gates.push(gate);
+            gates_with_wires.push(gate_with_wire);
+        }
+
+        gates_with_wires.sort_by(|a, b| a.1.cmp(&b.1));
+
+        for gate in gates_with_wires {
+            gates.push(gate.0);
         }
 
         let num_wires = gates.len() as u32;
+
+        let mut output_gates = vec![];
 
         output_gates.extend((num_wires - output_bits)..num_wires);
 

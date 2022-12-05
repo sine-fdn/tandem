@@ -112,12 +112,12 @@ fn test_coinshare_fail() {
     let corruption_index = rng.gen_range(0..COIN_LEN * 8);
 
     let (coin_share1, _) = init(coin1).unwrap();
-    let (coin_share2_ok, commitment_msg2_ok) = init(coin2.clone()).unwrap();
+    let (coin_share2_ok, commitment_msg2_ok) = init(coin2).unwrap();
     let coin_msg2_ok = serialize(&coin_share2_ok).unwrap();
 
     // randomly corrupt the coin value by 1 bit and check that the protocol fails
     {
-        let mut coin2 = coin2.clone();
+        let mut coin2 = coin2;
         coin2[corruption_index / 8] ^= 1 << (corruption_index % 8);
 
         let (coin_share2_nok, commitment_msg2_nok) = init(coin2).unwrap();
@@ -128,16 +128,16 @@ fn test_coinshare_fail() {
             finish(
                 coin_share1.clone(),
                 commitment_msg2_nok,
-                coin_msg2_ok.clone()
+                coin_msg2_ok
             )
         );
 
         assert_eq!(
             Err(Error::MacError),
             finish(
-                coin_share1.clone(),
+                coin_share1,
                 commitment_msg2_ok,
-                coin_msg2_nok.clone()
+                coin_msg2_nok
             )
         );
     }
