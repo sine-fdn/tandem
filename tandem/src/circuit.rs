@@ -1,4 +1,4 @@
-use std::vec;
+use std::{num::ParseIntError, vec};
 
 use blake3::Hasher;
 
@@ -76,9 +76,12 @@ impl Circuit {
 
     /// Converts a circuit written in ["Bristol
     /// Fashion"](https://homes.esat.kuleuven.be/~nsmart/MPC/) to Tandem's circuit format.
-    pub fn from_bristol_format(bristol_circuit: &str) -> Self {
+    pub fn from_bristol_format(bristol_circuit: &str) -> Result<Self, Error> {
         // Break .txt into lines treating each separately.
-        let lines: Vec<&str> = bristol_circuit.split("\n").collect();
+        let lines: Vec<&str> = bristol_circuit
+            .split("\n")
+            .filter(|l| !l.is_empty())
+            .collect();
         // The second line contains the number of input values (niv) and the amount of wires (and
         // bits) each of them uses. As here we will only use circuits with two parties, the first
         // piece of information is ignored.
@@ -104,40 +107,45 @@ impl Circuit {
 
         let mut output_gates = vec![];
 
-        for i in 0..lines.len() {
-            // In the documents from KU Leuven, the third line is always blank. Yet, I've seen .txt
-            // files following the Bristol Fashion that do not do this.
-            if lines[i] == "" || i < 4 {
-                continue;
-            }
-
+        for i in 3..lines.len() {
             let gate_vec: Vec<&str> = lines[i].split(" ").collect();
 
             let gate = match gate_vec.last() {
                 Some(&"XOR") => Gate::Xor(
-                    gate_vec[2].parse::<u32>().unwrap(),
-                    gate_vec[3].parse::<u32>().unwrap(),
+                    gate_vec[2]
+                        .parse::<u32>()
+                        .unwrap_or_else(|e| panic!("{e}")),
+                    gate_vec[3]
+                        .parse::<u32>()
+                        .unwrap_or_else(|e| panic!("{e}")),
                 ),
                 Some(&"AND") => Gate::And(
-                    gate_vec[2].parse::<u32>().unwrap(),
-                    gate_vec[3].parse::<u32>().unwrap(),
+                    gate_vec[2]
+                        .parse::<u32>()
+                        .unwrap_or_else(|e| panic!("{e}")),
+                    gate_vec[3]
+                        .parse::<u32>()
+                        .unwrap_or_else(|e| panic!("{e}")),
                 ),
-                Some(&"INV") => Gate::Not(gate_vec[2].parse::<u32>().unwrap()),
-                // TO DO: replace with appropriate arm or different strategy.
-                _ => Gate::InEval,
+                Some(&"INV") => Gate::Not(
+                    gate_vec[2]
+                        .parse::<u32>()
+                        .unwrap_or_else(|e| panic!("{e}")),
+                ),
+                x => {
+                    println!("{:?}", x);
+                    return Err(Error::InvalidCircuit);
+                }
             };
 
             gates.push(gate);
         }
 
-        // I am not sure, but it seems to me that the output gates are those which have the highest
-        // possible numbered wires. The reason why I thought so is that these seem to be the wires
-        // that are not in turn used as inputs. It might, however, have been a coincidence.
-        for i in 0..=output_bits {
-            output_gates.push((gates.len() - i as usize) as u32)
-        }
+        let num_wires = gates.len() as u32;
 
-        Circuit::new(gates, output_gates)
+        output_gates.extend((num_wires - output_bits)..num_wires);
+
+        Ok(Circuit::new(gates, output_gates))
     }
 
     /// Calculates the blake3 hash of the circuit.

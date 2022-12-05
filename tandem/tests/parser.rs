@@ -13,9 +13,9 @@ fn parse_bristol() -> () {
 
     let circuit_from_garble = compile_from_garble.gates;
 
-    let bristol_64_adder = include_str!("aes128.txt");
+    let bristol_64_adder = include_str!("adder64.txt");
 
     let circuit_from_bristol = Circuit::from_bristol_format(bristol_64_adder);
 
-    assert_eq!(circuit_from_garble, circuit_from_bristol);
+    assert_eq!(circuit_from_garble, circuit_from_bristol.unwrap());
 }
