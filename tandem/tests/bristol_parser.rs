@@ -4,7 +4,7 @@ use tandem::{simulate, Circuit};
 fn adder_64() -> () {
     let bristol_64_adder = include_str!("adder64.txt");
 
-    let circuit_from_bristol = Circuit::from_bristol_format(bristol_64_adder);
+    let circuit_from_bristol = Circuit::from_bristol_format(bristol_64_adder).unwrap();
 
     // println!("{:?}", circuit_from_bristol);
 
@@ -37,8 +37,8 @@ fn adder_64() -> () {
     }
 
     // println!("{:?}", contrib_bools);
-    println!("{:?}", circuit_from_bristol.unwrap());
-    // println!("{:?}", circuit_from_bristol.unwrap().validate());
+    println!("{:?}", circuit_from_bristol.clone());
+    println!("{:?}", circuit_from_bristol.validate());
 
     // let result = simulate(&circuit_from_bristol.unwrap(), &contrib_bools, &eval_bools);
 

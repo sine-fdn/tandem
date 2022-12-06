@@ -1,6 +1,6 @@
-use std::vec;
+use std::{collections::HashMap, vec};
 
-use blake3::Hasher;
+use blake3::{Hash, Hasher};
 
 use crate::Error;
 
@@ -105,43 +105,43 @@ impl Circuit {
         gates.append(&mut contrib_inputs);
         gates.append(&mut eval_inputs);
 
-        let mut gates_with_wires: Vec<(Gate, u32)> = vec![];
+        let mut mapped_wires = HashMap::new();
+
+        for i in 0..(eval_bits + contrib_bits) {
+            mapped_wires.insert(i, i);
+        }
 
         for i in 3..lines.len() {
             let gate_vec: Vec<&str> = lines[i].split(' ').collect();
 
-            let gate_with_wire = match gate_vec.last() {
-                Some(&"XOR") => (
-                    Gate::Xor(
-                        gate_vec[2].parse::<u32>().unwrap_or_else(|e| panic!("{e}")),
-                        gate_vec[3].parse::<u32>().unwrap_or_else(|e| panic!("{e}")),
-                    ),
-                    gate_vec[4].parse::<u32>().unwrap_or_else(|e| panic!("{e}")),
-                ),
-                Some(&"AND") => (
-                    Gate::And(
-                        gate_vec[2].parse::<u32>().unwrap_or_else(|e| panic!("{e}")),
-                        gate_vec[3].parse::<u32>().unwrap_or_else(|e| panic!("{e}")),
-                    ),
-                    gate_vec[4].parse::<u32>().unwrap_or_else(|e| panic!("{e}")),
-                ),
-                Some(&"INV") => (
-                    Gate::Not(gate_vec[2].parse::<u32>().unwrap_or_else(|e| panic!("{e}"))),
-                    gate_vec[3].parse::<u32>().unwrap_or_else(|e| panic!("{e}")),
-                ),
+            let bristol_output_wire = gate_vec[4].parse::<u32>().unwrap_or_else(|e| panic!("{e}"));
+            let tandem_output_wire = contrib_bits + eval_bits + (i as u32 - 3);
+
+            mapped_wires.insert(bristol_output_wire, tandem_output_wire);
+        }
+
+        for i in 3..lines.len() {
+            let gate_vec: Vec<&str> = lines[i].split(' ').collect();
+
+            let a = gate_vec[2].parse::<u32>().unwrap_or_else(|e| panic!("{e}"));
+            let b = gate_vec[3].parse::<u32>().unwrap_or_else(|e| panic!("{e}"));
+
+            let a = *mapped_wires.get(&a).unwrap();
+            let b = *mapped_wires.get(&b).unwrap();
+
+            let gate = match gate_vec.last() {
+                Some(&"XOR") => Gate::Xor(a, b),
+                Some(&"AND") => Gate::And(a, b),
+                Some(&"INV") => Gate::Not(a),
                 x => {
                     println!("{:?}", x);
-                    return Err(Error::InvalidCircuit);
+                    return Err(Error::InvalidCircuit(format!("{:?}", x)));
                 }
             };
 
-            gates_with_wires.push(gate_with_wire);
-        }
+            println!("{gate_vec:?} -> {gate:?} {}", gates.len());
 
-        gates_with_wires.sort_by(|a, b| a.1.cmp(&b.1));
-
-        for gate in gates_with_wires {
-            gates.push(gate.0);
+            gates.push(gate);
         }
 
         let num_wires = gates.len() as u32;
@@ -181,28 +181,37 @@ impl Circuit {
                 Gate::InContrib | Gate::InEval => {}
                 &Gate::Xor(x, y) => {
                     if x >= i || y >= i {
-                        return Err(Error::InvalidCircuit);
+                        return Err(Error::InvalidCircuit(format!(
+                            "Gate {:?}, x: {}, y: {}, i: {}",
+                            g, x, y, i
+                        )));
                     }
                 }
                 &Gate::And(x, y) => {
                     if x >= i || y >= i {
-                        return Err(Error::InvalidCircuit);
+                        return Err(Error::InvalidCircuit(format!(
+                            "Gate {:?}, x: {}, y: {}, i: {}",
+                            g, x, y, i
+                        )));
                     }
                     num_and_gates += 1;
                 }
                 &Gate::Not(x) => {
                     if x >= i {
-                        return Err(Error::InvalidCircuit);
+                        return Err(Error::InvalidCircuit(format!(
+                            "Gate {:?}, x: {}, i: {}",
+                            g, x, i
+                        )));
                     }
                 }
             }
         }
         if self.output_gates.is_empty() {
-            return Err(Error::InvalidCircuit);
+            return Err(Error::InvalidCircuit(format!("TODO")));
         }
         for &o in self.output_gates.iter() {
             if o >= self.gates.len() as u32 {
-                return Err(Error::InvalidCircuit);
+                return Err(Error::InvalidCircuit(format!("TODO")));
             }
         }
         if num_and_gates > MAX_AND_GATES {
