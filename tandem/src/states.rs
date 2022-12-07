@@ -1397,7 +1397,7 @@ fn ot_ands8_contrib(
         return Err(InsufficientInput);
     }
     if pending_from_a + pending_from_b == 0 {
-        return Err(InvalidCircuit(format!("TODO")));
+        return Err(InvalidCircuit);
     }
 
     // generate message for each input bit and continue

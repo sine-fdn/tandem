@@ -1,6 +1,6 @@
 use std::{collections::HashMap, vec};
 
-use blake3::{Hash, Hasher};
+use blake3::Hasher;
 
 use crate::Error;
 
@@ -77,78 +77,94 @@ impl Circuit {
     /// Converts a circuit written in ["Bristol
     /// Fashion"](https://homes.esat.kuleuven.be/~nsmart/MPC/) to Tandem's circuit format.
     pub fn from_bristol_format(bristol_circuit: &str) -> Result<Self, Error> {
-        // Break .txt into lines treating each separately.
         let lines: Vec<&str> = bristol_circuit
             .split('\n')
             .filter(|l| !l.is_empty())
             .collect();
-        // The second line contains the number of input values (niv) and the amount of wires (and
-        // bits) each of them uses. As here we will only use circuits with two parties, the first
-        // piece of information is ignored.
+
+        // The second line contains the number of input values (in our case, 2) followed the
+        // amount of wires each of them uses.
         let input_values: Vec<&str> = lines[1].split(' ').collect();
-        // The second number on the input_values vector is the amount of bits taken by the Contributor's input.
-        let contrib_bits = input_values[1].parse::<u32>().unwrap();
-        // The third number on the input_values vector is the amount of bits taken by the Evaluators's input.
-        let eval_bits = input_values[2].parse::<u32>().unwrap();
-        // The third line contains the number of output values and the amount of wires (and bits) it
-        // uses. Here, the first piece of information will always be 1 and is hence ignored.
-        let output_values: Vec<&str> = lines[2].split(' ').collect();
-        // The second element of output_values is the amount of bits taken by the output.
-        let output_bits = output_values[1].parse::<u32>().unwrap();
 
-        let mut gates = vec![];
-
+        let contrib_bits = input_values[1].parse::<u32>().unwrap_or_else(|e| panic!("Please make sure that the second number on the second line can be turned into a u32: {e}"));
         let mut contrib_inputs = vec![Gate::InContrib; contrib_bits as usize];
 
+        let eval_bits = input_values[2].parse::<u32>().unwrap_or_else(|e| panic!("Please make sure that the third number on the second line can be turned into a u32: {e}"));
         let mut eval_inputs = vec![Gate::InEval; eval_bits as usize];
+
+        // The third line contains the number of output values (in our case, 1) and the amount of
+        // wires it uses.
+        let output_values: Vec<&str> = lines[2].split(' ').collect();
+        let output_bits = output_values[1].parse::<u32>().unwrap_or_else(|e| panic!("Please make sure that the second number on the third line can be turned into a u32: {e}"));
+
+        let mut gates = vec![];
 
         gates.append(&mut contrib_inputs);
         gates.append(&mut eval_inputs);
 
+        // Maps the explicitly assigned output wire of the gates in "Bristol Fashion" to the
+        // implicitly assigned output wire of Tandem's circuit format (the gate's index).
         let mut mapped_wires = HashMap::new();
 
+        // For the input gates, the output wires are the same.
         for i in 0..(eval_bits + contrib_bits) {
             mapped_wires.insert(i, i);
         }
 
         for i in 3..lines.len() {
-            let gate_vec: Vec<&str> = lines[i].split(' ').collect();
+            let bristol_gate: Vec<&str> = lines[i].split(' ').rev().skip(1).collect();
 
-            let bristol_output_wire = gate_vec[4].parse::<u32>().unwrap_or_else(|e| panic!("{e}"));
-            let tandem_output_wire = contrib_bits + eval_bits + (i as u32 - 3);
+            let bristol_out_wire = bristol_gate[0].parse::<u32>().unwrap_or_else(|e| {
+                panic!(
+                    "The output wire in line {} could not be turned into a u32: {e}",
+                    i + 2
+                )
+            });
+            let tandem_out_wire = contrib_bits + eval_bits + (i as u32 - 3);
 
-            mapped_wires.insert(bristol_output_wire, tandem_output_wire);
+            mapped_wires.insert(bristol_out_wire, tandem_out_wire);
         }
 
         for i in 3..lines.len() {
-            let gate_vec: Vec<&str> = lines[i].split(' ').collect();
+            let bristol_gate: Vec<&str> = lines[i].split(' ').collect();
 
-            let a = gate_vec[2].parse::<u32>().unwrap_or_else(|e| panic!("{e}"));
-            let b = gate_vec[3].parse::<u32>().unwrap_or_else(|e| panic!("{e}"));
+            let a = bristol_gate[2].parse::<u32>().unwrap_or_else(|e| {
+                panic!(
+                    "The fifth number in line {} could not be turned into a u32: {e}",
+                    i + 2
+                )
+            });
+            let b = bristol_gate[3].parse::<u32>().unwrap_or_else(|e| {
+                panic!(
+                    "The fifth number in line {} could not be turned into a u32: {e}",
+                    i + 2
+                )
+            });
 
             let a = *mapped_wires.get(&a).unwrap();
             let b = *mapped_wires.get(&b).unwrap();
 
-            let gate = match gate_vec.last() {
+            let gate = match bristol_gate.last() {
                 Some(&"XOR") => Gate::Xor(a, b),
                 Some(&"AND") => Gate::And(a, b),
                 Some(&"INV") => Gate::Not(a),
-                x => {
-                    println!("{:?}", x);
-                    return Err(Error::InvalidCircuit(format!("{:?}", x)));
+                _ => {
+                    println!(
+                        "The last element of line {} is neither 'XOR', 'AND', nor 'INV'.",
+                        i + 2
+                    );
+                    return Err(Error::InvalidCircuit);
                 }
             };
-
-            println!("{gate_vec:?} -> {gate:?} {}", gates.len());
 
             gates.push(gate);
         }
 
         let num_wires = gates.len() as u32;
 
-        let mut output_gates = vec![];
-
-        output_gates.extend((num_wires - output_bits)..num_wires);
+        let output_gates: Vec<_> = ((num_wires - output_bits)..num_wires)
+            .map(|wire| *mapped_wires.get(&wire).unwrap())
+            .collect();
 
         Ok(Circuit::new(gates, output_gates))
     }
@@ -181,37 +197,28 @@ impl Circuit {
                 Gate::InContrib | Gate::InEval => {}
                 &Gate::Xor(x, y) => {
                     if x >= i || y >= i {
-                        return Err(Error::InvalidCircuit(format!(
-                            "Gate {:?}, x: {}, y: {}, i: {}",
-                            g, x, y, i
-                        )));
+                        return Err(Error::InvalidCircuit);
                     }
                 }
                 &Gate::And(x, y) => {
                     if x >= i || y >= i {
-                        return Err(Error::InvalidCircuit(format!(
-                            "Gate {:?}, x: {}, y: {}, i: {}",
-                            g, x, y, i
-                        )));
+                        return Err(Error::InvalidCircuit);
                     }
                     num_and_gates += 1;
                 }
                 &Gate::Not(x) => {
                     if x >= i {
-                        return Err(Error::InvalidCircuit(format!(
-                            "Gate {:?}, x: {}, i: {}",
-                            g, x, i
-                        )));
+                        return Err(Error::InvalidCircuit);
                     }
                 }
             }
         }
         if self.output_gates.is_empty() {
-            return Err(Error::InvalidCircuit(format!("TODO")));
+            return Err(Error::InvalidCircuit);
         }
         for &o in self.output_gates.iter() {
             if o >= self.gates.len() as u32 {
-                return Err(Error::InvalidCircuit(format!("TODO")));
+                return Err(Error::InvalidCircuit);
             }
         }
         if num_and_gates > MAX_AND_GATES {

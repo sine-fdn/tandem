@@ -121,7 +121,7 @@ pub enum Error {
     /// The Leaky Authenticated AND Triples did not pass the equality check.
     LeakyAndNotEqual,
     /// The provided circuit contains invalid gate connections.
-    InvalidCircuit(String),
+    InvalidCircuit,
     /// The provided circuit has too many gates to be processed.
     MaxCircuitSizeExceeded,
     /// The provided byte buffer could not be deserialized into an OT init message.
@@ -153,7 +153,7 @@ impl std::fmt::Display for Error {
             Error::LeakyAndNotEqual => {
                 f.write_str("The equality check of the leaky AND step failed")
             }
-            Error::InvalidCircuit(_) => {
+            Error::InvalidCircuit => {
                 f.write_str("The provided circuit is invalid and cannot be executed")
             }
             Error::MaxCircuitSizeExceeded => f.write_str(
