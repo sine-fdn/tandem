@@ -125,3 +125,57 @@ fn aes_128() -> () {
 
     assert_eq!(result, cipher_tandem);
 }
+
+#[test]
+fn sha_256() -> () {
+    let bristol_sha_256 = include_str!("sha256.txt");
+    let circuit = Circuit::from_bristol_format(bristol_sha_256).unwrap();
+
+    let message = ["2b7e151628aed2a6abf7158809cf4f3c"; 4];
+
+    let mut message_bin = vec![];
+
+    for i in 0..4 {
+        let n = u128::from_str_radix(message[i], 16).unwrap();
+        let n_bin = format!("{n:0128b}");
+        message_bin.push(n_bin);
+    }
+
+    let message_bin = message_bin.join("");
+
+    let mut message_tandem = vec![];
+
+    for bit in message_bin.chars() {
+        if bit == '0' {
+            message_tandem.push(false);
+        } else {
+            message_tandem.push(true);
+        }
+    }
+
+    let chaining_value = [0u128; 2];
+
+    let mut chaining_bin = vec![];
+
+    for i in 0..2 {
+        let n = chaining_value[i];
+        let bin = format!("{n:0128b}");
+        chaining_bin.push(bin);
+    }
+
+    let chaining_bin = chaining_bin.join("");
+
+    let mut chaining_tandem = vec![];
+
+    for bit in chaining_bin.chars() {
+        if bit == '0' {
+            chaining_tandem.push(false);
+        } else {
+            chaining_tandem.push(true);
+        }
+    }
+
+    let result = simulate(&circuit, &message_tandem, &chaining_tandem).unwrap();
+
+    println!("{result:?}");
+}

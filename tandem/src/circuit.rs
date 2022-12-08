@@ -115,10 +115,7 @@ impl Circuit {
             let bristol_gate: Vec<&str> = lines[i].split(' ').rev().skip(1).collect();
 
             let bristol_out_wire = bristol_gate[0].parse::<u32>().unwrap_or_else(|e| {
-                panic!(
-                    "The output wire in line {} could not be turned into a u32: {e}",
-                    i + 2
-                )
+                panic!("The output wire in gate {i} could not be turned into a u32: {e}")
             });
             let tandem_out_wire = contrib_bits + eval_bits + (i as u32 - 3);
 
@@ -129,16 +126,10 @@ impl Circuit {
             let bristol_gate: Vec<&str> = lines[i].split(' ').collect();
 
             let a = bristol_gate[2].parse::<u32>().unwrap_or_else(|e| {
-                panic!(
-                    "The fifth number in line {} could not be turned into a u32: {e}",
-                    i + 2
-                )
+                panic!("The first input wire in gate {i} could not be turned into a u32: {e}")
             });
             let b = bristol_gate[3].parse::<u32>().unwrap_or_else(|e| {
-                panic!(
-                    "The fifth number in line {} could not be turned into a u32: {e}",
-                    i + 2
-                )
+                panic!("The second input wire in gate {i} could not be turned into a u32: {e}")
             });
 
             let a = *mapped_wires.get(&a).unwrap();
@@ -149,10 +140,7 @@ impl Circuit {
                 Some(&"AND") => Gate::And(a, b),
                 Some(&"INV") => Gate::Not(a),
                 _ => {
-                    println!(
-                        "The last element of line {} is neither 'XOR', 'AND', nor 'INV'.",
-                        i + 2
-                    );
+                    println!("The last element of gate {i} is neither 'XOR', 'AND', nor 'INV'.");
                     return Err(Error::InvalidCircuit);
                 }
             };
