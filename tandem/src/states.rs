@@ -1140,11 +1140,11 @@ fn preprocessing_assign_masks(
                 // Step 3 `Π_{2pc}`
                 let lhs = &masks[*input_lhs as usize];
                 let rhs = &masks[*input_rhs as usize];
-                masks[idx as usize] = lhs.xor(rhs);
+                masks[idx] = lhs.xor(rhs);
             }
             Gate::Not(input) => {
                 let lhs = &masks[*input as usize];
-                masks[idx as usize] = lhs.not(delta);
+                masks[idx] = lhs.not(delta);
             }
             _ => {}
         }
