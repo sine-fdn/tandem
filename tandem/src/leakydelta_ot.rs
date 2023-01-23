@@ -61,7 +61,7 @@ pub(crate) mod message {
             buffer
         }
 
-        pub fn deserialize(buffer: Vec<u8>) -> Result<Self, Error> {
+        pub fn deserialize(buffer: &[u8]) -> Result<Self, Error> {
             if buffer.len() != crate::ot_base::MSG_LEN * 2 * super::K {
                 return Err(Error::OtInitDeserializationError);
             }
@@ -298,6 +298,6 @@ fn test_serialization() {
     assert_eq!(s_msg, s_msg.serialize().deserialize().unwrap());
     assert_eq!(
         reply,
-        message::OtInitReply::deserialize(reply.serialize()).unwrap()
+        message::OtInitReply::deserialize(&reply.serialize()).unwrap()
     );
 }

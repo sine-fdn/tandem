@@ -36,6 +36,29 @@ use rand_chacha::ChaCha20Rng;
 /// The type of messages exchanged between [`Contributor`] and [`Evaluator`].
 pub type Msg = Vec<u8>;
 
+/// A collection of messages from different parties.
+pub type Msgs = Vec<Msg>;
+
+fn zip_msgs(msgs: &(Msgs, Msgs)) -> Result<Msgs, bincode::Error> {
+    assert_eq!(msgs.0.len(), msgs.1.len());
+    let mut zipped_msgs = Vec::with_capacity(msgs.0.len());
+    for (msg1, msg2) in msgs.0.iter().zip(msgs.1.iter()) {
+        zipped_msgs.push(serialize(&(msg1, msg2))?);
+    }
+    Ok(zipped_msgs)
+}
+
+fn unzip_msgs(msgs: &Msgs) -> Result<(Msgs, Msgs), bincode::Error> {
+    let mut msgs1 = Vec::with_capacity(msgs.len());
+    let mut msgs2 = Vec::with_capacity(msgs.len());
+    for party in msgs {
+        let (msg1, msg2): (Msg, Msg) = deserialize(party)?;
+        msgs1.push(msg1);
+        msgs2.push(msg2);
+    }
+    Ok((msgs1, msgs2))
+}
+
 const TRIPLES: usize = BLOCK_SIZE * 3;
 
 /// The party that contributes its input to the MPC protocol.
@@ -57,13 +80,13 @@ pub struct Evaluator<C: Borrow<Circuit>, I: Borrow<[bool]>> {
 impl<C: Borrow<Circuit>, I: Borrow<[bool]>> Contributor<C, I> {
     /// Initializes the contributor, returning a state and an initial message for the [`Evaluator`].
     pub fn new(circuit: C, input: I, rng: ChaCha20Rng) -> Result<(Self, Msg), Error> {
-        let (state, msg) = ContribStep1::init(circuit.borrow(), input.borrow(), rng)?;
+        let (state, msgs) = ContribStep1::init(circuit.borrow(), input.borrow(), rng)?;
         let contrib = Self {
             state: Box::new(ContribState::Step1(state)),
             circuit,
             input,
         };
-        Ok((contrib, msg))
+        Ok((contrib, msgs[0].clone()))
     }
 
     /// Returns the number of messages that need to be exchanged before the protocol is completed.
@@ -75,36 +98,37 @@ impl<C: Borrow<Circuit>, I: Borrow<[bool]>> Contributor<C, I> {
     }
 
     /// Executes a single step in the protocol, based on the message received from the [`Evaluator`].
-    pub fn run(self, msg: &[u8]) -> Result<(Contributor<C, I>, Msg), Error> {
+    pub fn run(self, msg: &Msg) -> Result<(Contributor<C, I>, Msg), Error> {
         use ContribState::*;
 
-        let (state, msg) = match *self.state {
+        let msgs = &vec![msg.clone()];
+        let (state, msgs) = match *self.state {
             Step1(s) => {
-                let (state, msg) = s.run(msg)?;
+                let (state, msg) = s.run(msgs)?;
                 (Box::new(Step1a(state)), msg)
             }
             Step1a(s) => {
-                let (state, msg) = s.run(msg, self.circuit.borrow())?;
+                let (state, msg) = s.run(msgs, self.circuit.borrow())?;
                 (Box::new(Step2(state)), msg)
             }
             Step2(s) => {
-                let (state, msg) = s.run(msg)?;
+                let (state, msg) = s.run(msgs)?;
                 (Box::new(Step3(state)), msg)
             }
             Step3(s) => {
-                let (state, msg) = s.run(msg)?;
+                let (state, msg) = s.run(msgs)?;
                 (Box::new(Step4(state)), msg)
             }
             Step4(s) => {
-                let (state, msg) = s.run(msg, self.circuit.borrow())?;
+                let (state, msg) = s.run(msgs, self.circuit.borrow())?;
                 (Box::new(Step5(ContribBucketingStep(state))), msg)
             }
             Step5(s) => {
-                let (state, msg) = s.run(msg, self.circuit.borrow(), self.input.borrow())?;
+                let (state, msg) = s.run(msgs, self.circuit.borrow(), self.input.borrow())?;
                 (Box::new(Step6(state)), msg)
             }
             Step6(s) => {
-                let ((), msg) = s.run(msg, self.circuit.borrow(), self.input.borrow())?;
+                let ((), msg) = s.run(msgs, self.circuit.borrow(), self.input.borrow())?;
                 (Box::new(Done), msg)
             }
             Done => return Err(Error::ProtocolEnded),
@@ -114,7 +138,7 @@ impl<C: Borrow<Circuit>, I: Borrow<[bool]>> Contributor<C, I> {
             circuit: self.circuit,
             input: self.input,
         };
-        Ok((next_state, msg))
+        Ok((next_state, msgs[0].clone()))
     }
 }
 
@@ -138,40 +162,41 @@ impl<C: Borrow<Circuit>, I: Borrow<[bool]>> Evaluator<C, I> {
     }
 
     /// Executes a single step in the protocol, based on the message received from the [`Contributor`].
-    pub fn run(self, msg: &[u8]) -> Result<(Evaluator<C, I>, Msg), Error> {
+    pub fn run(self, msg: &Msg) -> Result<(Evaluator<C, I>, Msg), Error> {
         use EvalState::*;
 
-        let (state, msg) = match *self.state {
+        let msgs = &vec![msg.clone()];
+        let (state, msgs) = match *self.state {
             Step1(s) => {
-                let (state, msg) = s.run(msg, self.circuit.borrow())?;
+                let (state, msg) = s.run(msgs, self.circuit.borrow())?;
                 (Box::new(Step2(state)), msg)
             }
             Step2(s) => {
-                let (state, msg) = s.run(msg)?;
+                let (state, msg) = s.run(msgs)?;
                 (Box::new(Step2a(state)), msg)
             }
             Step2a(s) => {
-                let (state, msg) = s.run(msg, self.circuit.borrow())?;
+                let (state, msg) = s.run(msgs, self.circuit.borrow())?;
                 (Box::new(Step3(state)), msg)
             }
             Step3(s) => {
-                let (state, msg) = s.run(msg)?;
+                let (state, msg) = s.run(msgs)?;
                 (Box::new(Step4(state)), msg)
             }
             Step4(s) => {
-                let (state, msg) = s.run(msg)?;
+                let (state, msg) = s.run(msgs)?;
                 (Box::new(Step5(state)), msg)
             }
             Step5(s) => {
-                let (state, msg) = s.run(msg, self.circuit.borrow())?;
+                let (state, msg) = s.run(msgs, self.circuit.borrow())?;
                 (Box::new(Step6(state)), msg)
             }
             Step6(s) => {
-                let (state, msg) = s.run(msg, self.circuit.borrow(), self.input.borrow())?;
+                let (state, msg) = s.run(msgs, self.circuit.borrow(), self.input.borrow())?;
                 (Box::new(Step8(state)), msg)
             }
             Step8(s) => {
-                let (output, _) = s.run(msg, self.circuit.borrow())?;
+                let (output, _) = s.run(msgs, self.circuit.borrow())?;
                 (Box::new(Done(output)), vec![])
             }
             Done(_) => return Err(Error::ProtocolEnded),
@@ -181,14 +206,15 @@ impl<C: Borrow<Circuit>, I: Borrow<[bool]>> Evaluator<C, I> {
             circuit: self.circuit,
             input: self.input,
         };
-        Ok((next_state, msg))
+        Ok((next_state, msgs[0].clone()))
     }
 
     /// Returns the output of the computation or `None` if the protocol has not ended.
-    pub fn output(self, msg: &[u8]) -> Result<Vec<bool>, Error> {
+    pub fn output(self, msg: &Msg) -> Result<Vec<bool>, Error> {
+        let msgs = &vec![msg.clone()];
         match *self.state {
             EvalState::Step8(s) => {
-                let (output, _) = s.run(msg, self.circuit.borrow())?;
+                let (output, _) = s.run(msgs, self.circuit.borrow())?;
                 Ok(output)
             }
             _ => Err(Error::ProtocolStillInProgress),
@@ -196,7 +222,7 @@ impl<C: Borrow<Circuit>, I: Borrow<[bool]>> Evaluator<C, I> {
     }
 }
 
-type TandemResult<S> = Result<(S, Msg), Error>;
+type TandemResult<S> = Result<(S, Msgs), Error>;
 
 enum ContribState {
     Step1(ContribStep1),
@@ -421,7 +447,7 @@ impl ContribStep1 {
         circuit: &Circuit,
         input: &[bool],
         mut rng: ChaCha20Rng,
-    ) -> Result<(Self, Msg), Error> {
+    ) -> Result<(Self, Msgs), Error> {
         circuit.validate_contributor_input(input)?;
         let (state, msg) = init_ot1(Delta::gen_random(&mut rng), rng, circuit)?;
         Ok((Self(state), msg))
@@ -429,51 +455,51 @@ impl ContribStep1 {
 }
 
 impl EvalStep1 {
-    fn run(mut self, msg: &[u8], circuit: &Circuit) -> TandemResult<EvalStep2> {
+    fn run(mut self, msgs: &Msgs, circuit: &Circuit) -> TandemResult<EvalStep2> {
         let (state, reply1) = init_ot1(Delta::gen_random(&mut self.0.rng), self.0.rng, circuit)?;
-        let (state, reply2) = init_ot2(state, msg)?;
-        let reply = serialize(&(reply1, reply2))?;
+        let (state, reply2) = init_ot2(state, msgs)?;
+        let reply = zip_msgs(&(reply1, reply2))?;
         Ok((EvalStep2(state), reply))
     }
 }
 
 impl ContribStep1 {
-    fn run(self, msg: &[u8]) -> TandemResult<ContribStep1a> {
-        let (msg1, msg2): (Msg, Msg) = deserialize(msg)?;
-        let (state, reply1) = init_ot2(self.0, &msg1)?;
-        let (state, reply2) = init_ot3(state, &msg2)?;
-        let reply = serialize(&(reply1, reply2))?;
+    fn run(self, msgs: &Msgs) -> TandemResult<ContribStep1a> {
+        let (msgs1, msgs2): (Msgs, Msgs) = unzip_msgs(msgs)?;
+        let (state, reply1) = init_ot2(self.0, &msgs1)?;
+        let (state, reply2) = init_ot3(state, &msgs2)?;
+        let reply = zip_msgs(&(reply1, reply2))?;
         Ok((ContribStep1a(state), reply))
     }
 }
 
 impl EvalStep2 {
-    fn run(self, msg: &[u8]) -> TandemResult<EvalStep2a> {
-        let (msg1, msg2): (Msg, Msg) = deserialize(msg)?;
-        let (state, reply1) = init_ot3(self.0, &msg1)?;
-        let (state, reply2) = init_ot4(state, msg2)?;
-        let reply = serialize(&(reply1, reply2))?;
+    fn run(self, msgs: &Msgs) -> TandemResult<EvalStep2a> {
+        let (msgs1, msgs2): (Msgs, Msgs) = unzip_msgs(msgs)?;
+        let (state, reply1) = init_ot3(self.0, &msgs1)?;
+        let (state, reply2) = init_ot4(state, &msgs2)?;
+        let reply = zip_msgs(&(reply1, reply2))?;
         Ok((EvalStep2a(state), reply))
     }
 }
 
 impl ContribStep1a {
-    fn run(self, msg: &[u8], circuit: &Circuit) -> TandemResult<ContribStep2> {
-        let (msg1, msg2): (Msg, Msg) = deserialize(msg)?;
-        let (state, reply1) = init_ot4(self.0, msg1)?;
-        let (state, reply2) = ot_ands1(state, &msg2, circuit)?;
-        let reply = serialize(&(reply1, reply2))?;
+    fn run(self, msgs: &Msgs, circuit: &Circuit) -> TandemResult<ContribStep2> {
+        let (msgs1, msgs2): (Msgs, Msgs) = unzip_msgs(&msgs)?;
+        let (state, reply1) = init_ot4(self.0, &msgs1)?;
+        let (state, reply2) = ot_ands1(state, &msgs2, circuit)?;
+        let reply = zip_msgs(&(reply1, reply2))?;
         Ok((ContribStep2(state), reply))
     }
 }
 
 impl EvalStep2a {
-    fn run(self, msg: &[u8], circuit: &Circuit) -> TandemResult<EvalStep3> {
-        let (msg1, msg2): (Msg, Msg) = deserialize(msg)?;
-        let (state, reply) = ot_ands1(self.0, &msg1, circuit)?;
+    fn run(self, msgs: &Msgs, circuit: &Circuit) -> TandemResult<EvalStep3> {
+        let (msgs1, msgs2): (Msgs, Msgs) = unzip_msgs(msgs)?;
+        let (state, reply) = ot_ands1(self.0, &msgs1, circuit)?;
 
         // Step 2 of `Π_{LaAND}`
-        let and_hashes: Vec<[MacType; 2]> = deserialize(&msg2)?;
+        let and_hashes: Vec<[MacType; 2]> = deserialize(&msgs2[0])?;
         let and_shares = state.compute_and_shares(&and_hashes, Role::Evaluator)?;
         let state = OtAndsState2 {
             rng: state.rng,
@@ -492,8 +518,8 @@ impl EvalStep2a {
 
 impl ContribStep2 {
     // Implements Step 2 of `Π_{LaAND}` of WRK17a
-    fn run(self, msg: &[u8]) -> TandemResult<ContribStep3> {
-        let and_hashes: Vec<[MacType; 2]> = deserialize(msg)?;
+    fn run(self, msgs: &Msgs) -> TandemResult<ContribStep3> {
+        let and_hashes: Vec<[MacType; 2]> = deserialize(&msgs[0])?;
         let state = self.0;
         let and_shares = state.compute_and_shares(&and_hashes, Role::Contributor)?;
         let reply = serialize(&and_shares)?;
@@ -508,80 +534,80 @@ impl ContribStep2 {
             r_prime: state.r_prime,
             and_shares: state.and_shares,
         };
-        Ok((ContribStep3(state), reply))
+        Ok((ContribStep3(state), vec![reply]))
     }
 }
 
 /// Receives its message from [`ContribStep2`] which is a (large) vector of `AND` shares.
 impl EvalStep3 {
-    fn run(self, msg: &[u8]) -> TandemResult<EvalStep4> {
-        let (state, replies) = ot_ands3_update_z2_eval(self.0, msg)?;
-        let reply = serialize(&replies)?;
+    fn run(self, msgs: &Msgs) -> TandemResult<EvalStep4> {
+        let (state, replies) = ot_ands3_update_z2_eval(self.0, msgs)?;
+        let reply = zip_msgs(&replies)?;
         Ok((EvalStep4(state), reply))
     }
 }
 
 impl ContribStep3 {
-    fn run(self, msg: &[u8]) -> TandemResult<ContribStep4> {
-        let (msg1, msg2): (Msg, Msg) = deserialize(msg)?;
-        let (state, reply1) = ot_ands3_update_z2_contrib(self.0, &msg1)?;
-        let (state, reply2) = ot_ands4(state, &msg2)?;
-        let reply = serialize(&(reply1, reply2))?;
+    fn run(self, msgs: &Msgs) -> TandemResult<ContribStep4> {
+        let (msgs1, msgs2): (Msgs, Msgs) = unzip_msgs(msgs)?;
+        let (state, reply1) = ot_ands3_update_z2_contrib(self.0, &msgs1)?;
+        let (state, reply2) = ot_ands4(state, &msgs2)?;
+        let reply = zip_msgs(&(reply1, reply2))?;
         Ok((ContribStep4(state), reply))
     }
 }
 
 impl EvalStep4 {
-    fn run(self, msg: &[u8]) -> TandemResult<EvalStep5> {
-        let (msg1, msg2): (Msg, Msg) = deserialize(msg)?;
-        let (state, reply1) = ot_ands4(self.0, &msg1)?;
-        let (state, reply2) = ot_ands5(state, &msg2)?;
-        let reply = serialize(&(reply1, reply2))?;
+    fn run(self, msgs: &Msgs) -> TandemResult<EvalStep5> {
+        let (msgs1, msgs2): (Msgs, Msgs) = unzip_msgs(msgs)?;
+        let (state, reply1) = ot_ands4(self.0, &msgs1)?;
+        let (state, reply2) = ot_ands5(state, &msgs2)?;
+        let reply = zip_msgs(&(reply1, reply2))?;
         Ok((EvalStep5(state), reply))
     }
 }
 
 impl ContribStep4 {
-    fn run(self, msg: &[u8], circuit: &Circuit) -> TandemResult<AndsBucketingState> {
-        let (msg1, msg2): (Msg, Msg) = deserialize(msg)?;
-        let (state, reply1) = ot_ands5(self.0, &msg1)?;
-        let (state, reply2) = ot_ands6(state, &msg2, circuit)?;
-        let reply = serialize(&(reply1, reply2))?;
+    fn run(self, msgs: &Msgs, circuit: &Circuit) -> TandemResult<AndsBucketingState> {
+        let (msgs1, msgs2): (Msgs, Msgs) = unzip_msgs(msgs)?;
+        let (state, reply1) = ot_ands5(self.0, &msgs1)?;
+        let (state, reply2) = ot_ands6(state, &msgs2, circuit)?;
+        let reply = zip_msgs(&(reply1, reply2))?;
         Ok((state, reply))
     }
 }
 
 impl EvalStep5 {
-    fn run(self, msg: &[u8], circuit: &Circuit) -> TandemResult<EvalStep6> {
-        let (msg1, msg2): (Msg, Msg) = deserialize(msg)?;
-        let (state, reply1) = ot_ands6(self.0, &msg1, circuit)?;
-        let (state, reply2) = state.finish(&msg2, circuit)?;
+    fn run(self, msgs: &Msgs, circuit: &Circuit) -> TandemResult<EvalStep6> {
+        let (msgs1, msgs2): (Msgs, Msgs) = unzip_msgs(msgs)?;
+        let (state, reply1) = ot_ands6(self.0, &msgs1, circuit)?;
+        let (state, reply2) = state.finish(&msgs2, circuit)?;
 
-        let msg = serialize(&(reply1, reply2))?;
+        let msg = zip_msgs(&(reply1, reply2))?;
         Ok((EvalStep6(state), msg))
     }
 }
 
 impl ContribBucketingStep {
-    fn run(self, msg: &[u8], circuit: &Circuit, input: &[bool]) -> TandemResult<InputProcContrib> {
-        let (msg1, msg2): (Msg, Msg) = deserialize(msg)?;
-        let (state, reply1) = self.0.finish(&msg1, circuit)?;
-        let (state, reply2) = ot_ands8_contrib(state, &msg2, circuit, input)?;
+    fn run(self, msgs: &Msgs, circuit: &Circuit, input: &[bool]) -> TandemResult<InputProcContrib> {
+        let (msgs1, msgs2): (Msgs, Msgs) = unzip_msgs(msgs)?;
+        let (state, reply1) = self.0.finish(&msgs1, circuit)?;
+        let (state, reply2) = ot_ands8_contrib(state, &msgs2, circuit, input)?;
 
-        let msg = serialize(&(reply1, reply2))?;
+        let msg = zip_msgs(&(reply1, reply2))?;
         Ok((state, msg))
     }
 }
 
 impl EvalStep6 {
-    fn run(self, msg: &[u8], circuit: &Circuit, input: &[bool]) -> TandemResult<InputProcEval> {
-        let (msg1, msg2): (Msg, Msg) = deserialize(msg)?;
-        let (state, reply) = ot_ands8_eval(self.0, &msg1, &msg2, circuit, input)?;
+    fn run(self, msgs: &Msgs, circuit: &Circuit, input: &[bool]) -> TandemResult<InputProcEval> {
+        let (msgs1, msgs2): (Msgs, Msgs) = unzip_msgs(msgs)?;
+        let (state, reply) = ot_ands8_eval(self.0, &msgs1, &msgs2, circuit, input)?;
         Ok((state, reply))
     }
 }
 
-type StateResult<S> = Result<(S, Msg), Error>;
+type StateResult<S> = Result<(S, Msgs), Error>;
 
 /// Calculates the bucket size according to WRK17a, Table 4 for statistical security ρ = 40 (rho).
 fn bucket_size(circuit: &Circuit) -> usize {
@@ -623,11 +649,11 @@ fn init_ot1(delta: Delta, mut rng: ChaCha20Rng, p: &Circuit) -> StateResult<OtIn
         coin_share,
         blocks: num_abits_aligned / BLOCK_SIZE,
     };
-    Ok((state, msg))
+    Ok((state, vec![msg]))
 }
 
-fn init_ot2(mut state: OtInitState1, msg: &[u8]) -> StateResult<OtInitState2> {
-    let (serialized_ot_init, coin_commitment): (SerializedOtInit, Vec<u8>) = deserialize(msg)?;
+fn init_ot2(mut state: OtInitState1, msgs: &Msgs) -> StateResult<OtInitState2> {
+    let (serialized_ot_init, coin_commitment): (SerializedOtInit, Vec<u8>) = deserialize(&msgs[0])?;
     let ot_init = serialized_ot_init.deserialize()?;
     let sender = SenderInitializer::init(&mut state.rng, state.delta.clone(), &ot_init);
     let coin_msg = protocol::cointossing::serialize(&state.coin_share)?;
@@ -641,11 +667,11 @@ fn init_ot2(mut state: OtInitState1, msg: &[u8]) -> StateResult<OtInitState2> {
         coin_commitment,
         blocks: state.blocks,
     };
-    Ok((state, msg))
+    Ok((state, vec![msg]))
 }
 
-fn init_ot3(state: OtInitState2, msg: &[u8]) -> StateResult<OtInitState3> {
-    let (serialized_ot_init, upstream_coin): (SerializedOtInit, Vec<u8>) = deserialize(msg)?;
+fn init_ot3(state: OtInitState2, msgs: &Msgs) -> StateResult<OtInitState3> {
+    let (serialized_ot_init, upstream_coin): (SerializedOtInit, Vec<u8>) = deserialize(&msgs[0])?;
     let coin =
         protocol::cointossing::finish(state.coin_share, state.coin_commitment, upstream_coin)?;
     let ot_init = serialized_ot_init.deserialize()?;
@@ -659,11 +685,11 @@ fn init_ot3(state: OtInitState2, msg: &[u8]) -> StateResult<OtInitState3> {
         coin,
         blocks: state.blocks,
     };
-    Ok((state, reply))
+    Ok((state, vec![reply]))
 }
 
-fn init_ot4(mut state: OtInitState3, msg: Vec<u8>) -> StateResult<OtInitState4> {
-    let init_msg = OtInitReply::deserialize(msg)?;
+fn init_ot4(mut state: OtInitState3, msgs: &Msgs) -> StateResult<OtInitState4> {
+    let init_msg = OtInitReply::deserialize(&msgs[0])?;
     let s = state.s.recv(&init_msg);
 
     let mut r = state.r;
@@ -692,11 +718,11 @@ fn init_ot4(mut state: OtInitState3, msg: Vec<u8>) -> StateResult<OtInitState4> 
         abits,
         s,
     };
-    Ok((state, reply))
+    Ok((state, vec![reply]))
 }
 
-fn ot_ands1(mut state: OtInitState4, msg: &[u8], circuit: &Circuit) -> StateResult<OtAndsState1> {
-    let blocks: Vec<Vec<MacType>> = deserialize(msg)?;
+fn ot_ands1(mut state: OtInitState4, msgs: &Msgs, circuit: &Circuit) -> StateResult<OtAndsState1> {
+    let blocks: Vec<Vec<MacType>> = deserialize(&msgs[0])?;
     for (block_id, block) in blocks.into_iter().enumerate() {
         let ot_rx: [MacType; BLOCK_SIZE] = block
             .try_into()
@@ -749,7 +775,7 @@ fn ot_ands1(mut state: OtInitState4, msg: &[u8], circuit: &Circuit) -> StateResu
     let and_hashes = state.compute_and_ot_data();
     let msg = serialize(&and_hashes)?;
 
-    Ok((state, msg))
+    Ok((state, vec![msg]))
 }
 
 impl OtAndsState1 {
@@ -848,8 +874,8 @@ fn compute_u(delta: &Delta, and_bits: &[BitShare]) -> Vec<MacType> {
     msgs
 }
 
-fn ot_ands3_update_z2_contrib(mut state: OtAndsState2, msg: &[u8]) -> StateResult<OtAndsState3> {
-    let and_shares: Vec<MacType> = deserialize(msg)?;
+fn ot_ands3_update_z2_contrib(mut state: OtAndsState2, msgs: &Msgs) -> StateResult<OtAndsState3> {
+    let and_shares: Vec<MacType> = deserialize(&msgs[0])?;
     // Step 3 of `Π_{LaAND}`
     let and_bits = &mut state.and_triples[0..];
     let num_blocks = and_bits.len() / BLOCK_SIZE / 3;
@@ -882,14 +908,14 @@ fn ot_ands3_update_z2_contrib(mut state: OtAndsState2, msg: &[u8]) -> StateResul
         r_and_rand_hash: state.r_and_rand_hash,
         r_prime: state.r_prime,
     };
-    Ok((state, msg))
+    Ok((state, vec![msg]))
 }
 
 fn ot_ands3_update_z2_eval(
     mut state: OtAndsState2,
-    msg: &[u8],
-) -> Result<(OtAndsState3, (Msg, Msg)), Error> {
-    let upstream_ands: Vec<MacType> = deserialize(msg)?;
+    msgs: &Msgs,
+) -> Result<(OtAndsState3, (Msgs, Msgs)), Error> {
+    let upstream_ands: Vec<MacType> = deserialize(&msgs[0])?;
     // Step 3 of `Π_{LaAND}`
     let and_bits = &mut state.and_triples[0..];
     let num_blocks = and_bits.len() / BLOCK_SIZE / 3;
@@ -928,11 +954,11 @@ fn ot_ands3_update_z2_eval(
         r_and_rand_hash: state.r_and_rand_hash,
         r_prime: state.r_prime,
     };
-    Ok((state, (msg1, msg2)))
+    Ok((state, (vec![msg1], vec![msg2])))
 }
 
-fn ot_ands4(mut state: OtAndsState3, msg: &[u8]) -> StateResult<OtAndsState4> {
-    let u_from_other_party: Vec<MacType> = deserialize(msg)?;
+fn ot_ands4(mut state: OtAndsState3, msgs: &Msgs) -> StateResult<OtAndsState4> {
+    let u_from_other_party: Vec<MacType> = deserialize(&msgs[0])?;
     // Step 4/5 (c + d) of `Π_{LaAND}`
     // implementation of Protoocol Π_{LaAND} steps 4c+4d (resp. 5c+5d) of WRK17a
     let and_bits = &state.and_triples[0..];
@@ -982,12 +1008,12 @@ fn ot_ands4(mut state: OtAndsState3, msg: &[u8]) -> StateResult<OtAndsState4> {
         r_and_rand_hash: state.r_and_rand_hash,
         r_prime: state.r_prime,
     };
-    Ok((state, msg))
+    Ok((state, vec![msg]))
 }
 
-fn ot_ands5(mut state: OtAndsState4, msg: &[u8]) -> StateResult<OtAndsState5> {
+fn ot_ands5(mut state: OtAndsState4, msgs: &Msgs) -> StateResult<OtAndsState5> {
     let (r_and_rand_hashed, w_from_other_party): (Vec<MacType>, Vec<(MacType, MacType)>) =
-        deserialize(msg)?;
+        deserialize(&msgs[0])?;
 
     // Step 4/5 (e) of `Π_{LaAND}`
     let and_bits = &state.and_triples[0..];
@@ -1036,7 +1062,7 @@ fn ot_ands5(mut state: OtAndsState4, msg: &[u8]) -> StateResult<OtAndsState5> {
         r_and_rand_hash: state.r_and_rand_hash,
         r_prime: state.r_prime,
     };
-    Ok((state, msg))
+    Ok((state, vec![msg]))
 }
 
 fn check_hash(
@@ -1247,11 +1273,11 @@ impl AndsBucketingState {
             bucket_size,
         };
 
-        Ok((state, msg))
+        Ok((state, vec![msg]))
     }
 
-    fn finish(self, msg: &[u8], circuit: &Circuit) -> StateResult<OtAndsState6> {
-        let mut state = self.update_triples(msg)?;
+    fn finish(self, msgs: &Msgs, circuit: &Circuit) -> StateResult<OtAndsState6> {
+        let mut state = self.update_triples(msgs)?;
 
         let wire_abits = state.wire_abits;
         let masks = preprocessing_assign_masks(wire_abits, &mut state.rng, &state.delta, circuit);
@@ -1267,14 +1293,14 @@ impl AndsBucketingState {
             rhs_and_bits,
         };
 
-        Ok((state, msg))
+        Ok((state, vec![msg]))
     }
 
     /// Implements sub-protocol `Π_{aAND}` Step 3.a (checking step), and 3.b.
-    fn update_triples(self, msg: &[u8]) -> Result<AndsBucketingState, Error> {
+    fn update_triples(self, msgs: &Msgs) -> Result<AndsBucketingState, Error> {
         assert!(self.bucketing_bits.len() == self.length * self.bucket_size);
 
-        let (upstream_bits, upstream_macs): (Vec<bool>, Vec<MacType>) = deserialize(msg)?;
+        let (upstream_bits, upstream_macs): (Vec<bool>, Vec<MacType>) = deserialize(&msgs[0])?;
         if upstream_bits.len() != self.bucketing_bits.len()
             || upstream_macs.len() != self.bucketing_bits.len()
         {
@@ -1342,9 +1368,9 @@ impl AndsBucketingState {
     }
 }
 
-fn ot_ands6(state: OtAndsState5, msg: &[u8], circuit: &Circuit) -> StateResult<AndsBucketingState> {
+fn ot_ands6(state: OtAndsState5, msgs: &Msgs, circuit: &Circuit) -> StateResult<AndsBucketingState> {
     // 2nd part of Step 4e/5e of `Π_{LaAND}`
-    let (r_prime, r_and_rand): (Vec<MacType>, Vec<(MacType, KeyType)>) = deserialize(msg)?;
+    let (r_prime, r_and_rand): (Vec<MacType>, Vec<(MacType, KeyType)>) = deserialize(&msgs[0])?;
     check_hash(&state, &r_prime, &r_and_rand)?;
 
     AndsBucketingState::init(state, circuit)
@@ -1352,11 +1378,11 @@ fn ot_ands6(state: OtAndsState5, msg: &[u8], circuit: &Circuit) -> StateResult<A
 
 fn ot_ands8_contrib(
     mut state: OtAndsState6,
-    msg1: &[u8],
+    msgs1: &Msgs,
     circuit: &Circuit,
     input: &[bool],
 ) -> StateResult<InputProcContrib> {
-    let (x2, y2): (Vec<bool>, Vec<bool>) = deserialize(msg1)?;
+    let (x2, y2): (Vec<bool>, Vec<bool>) = deserialize(&msgs1[0])?;
     if state.lhs_and_bits.len() != x2.len()
         || state.rhs_and_bits.len() != y2.len()
         || state.lhs_and_bits.len() != state.rhs_and_bits.len()
@@ -1421,7 +1447,7 @@ fn ot_ands8_contrib(
         mac_checks_success: true,
         masks: state.masks,
     };
-    Ok((state, msg))
+    Ok((state, vec![msg]))
 }
 
 impl OtAndsState6 {
@@ -1448,12 +1474,12 @@ impl OtAndsState6 {
 
 fn ot_ands8_eval(
     mut state: OtAndsState6,
-    msg1: &[u8],
-    msg2: &[u8],
+    msgs1: &Msgs,
+    msgs2: &Msgs,
     circuit: &Circuit,
     input: &[bool],
 ) -> StateResult<InputProcEval> {
-    let (upstream_lhs_bits, upstream_rhs_bits): (Vec<bool>, Vec<bool>) = deserialize(msg1)?;
+    let (upstream_lhs_bits, upstream_rhs_bits): (Vec<bool>, Vec<bool>) = deserialize(&msgs1[0])?;
 
     for i in 0..state.lhs_and_bits.len() {
         state.lhs_and_bits[i] ^= upstream_lhs_bits[i];
@@ -1478,7 +1504,7 @@ fn ot_ands8_eval(
 
     // input processing:
     let (garbled_table_shares, input_mask_shares): (Vec<TableShare>, Vec<InputMaskShare>) =
-        deserialize(msg2)?;
+        deserialize(&msgs2[0])?;
     if ands != garbled_table_shares.len() {
         return Err(UnexpectedGarbledTableShare);
     }
@@ -1519,54 +1545,6 @@ fn ot_ands8_eval(
         let masked_input = mask.bit.bit ^ bit_share.bit ^ input;
         masked_inputs.push((*index, masked_input));
     }
-
-    let (garbled_table_shares, input_mask_shares): (Vec<TableShare>, Vec<InputMaskShare>) =
-        deserialize(msg2)?;
-    if ands != garbled_table_shares.len() {
-        return Err(UnexpectedGarbledTableShare);
-    }
-    for (gate, and_share) in garbled_table_shares {
-        if !circuit.gates()[gate as usize].is_and() {
-            return Err(UnexpectedGarbledTableShare);
-        }
-        wires[gate as usize].other_and_table = and_share;
-    }
-
-    let input_gates = circuit
-        .gates()
-        .iter()
-        .filter(|g| *g == &Gate::InEval)
-        .count();
-    if input_gates > input.len() {
-        return Err(InsufficientInput);
-    }
-
-    // generate message for each input bit and continue
-    let mut mask_shares = Vec::new();
-    for (index, gate) in circuit.gates().iter().enumerate() {
-        if gate == &Gate::InContrib {
-            mask_shares.push((
-                index as GateIndex,
-                PartialBitShare {
-                    bit: state.masks[index].bit.bit,
-                    mac: state.masks[index].bit.mac,
-                },
-            ))
-        }
-    }
-
-    let mut masked_inputs = Vec::with_capacity(input_mask_shares.len());
-    for ((index, bit_share), input) in input_mask_shares.iter().zip(input.iter()) {
-        if circuit.gates()[*index as usize] != Gate::InEval {
-            return Err(UnexpectedMessageType);
-        }
-
-        let mask = &state.masks[*index as usize];
-        assert!(bit_share.verify(&mask.bit.key, &state.delta));
-
-        let masked_input = mask.bit.bit ^ bit_share.bit ^ input;
-        masked_inputs.push((*index, masked_input));
-    }
     let reply = serialize(&(mask_shares, masked_inputs))?;
     let state = InputProcEval {
         delta: state.delta,
@@ -1575,7 +1553,7 @@ fn ot_ands8_eval(
         wires,
     };
 
-    Ok((state, reply))
+    Ok((state, vec![reply]))
 }
 
 #[allow(clippy::identity_op)]
@@ -1650,10 +1628,10 @@ fn compute_hashes(
 }
 
 impl InputProcContrib {
-    fn run(mut self, msg: &[u8], circuit: &Circuit, input: &[bool]) -> TandemResult<()> {
+    fn run(mut self, msgs: &Msgs, circuit: &Circuit, input: &[bool]) -> TandemResult<()> {
         // P_B sends its mask to P_A which then returns masked input plus label to P_B for final
         // circuit evaluation
-        let (shares, inputs): (Vec<InputMaskShare>, Vec<(u32, bool)>) = deserialize(msg)?;
+        let (shares, inputs): (Vec<InputMaskShare>, Vec<(u32, bool)>) = deserialize(&msgs[0])?;
         let mut evaluation_inputs = Vec::with_capacity(shares.len());
         for ((index, bit_share), input) in shares.iter().zip(input.iter()) {
             if circuit.gates()[*index as usize] != Gate::InContrib {
@@ -1694,7 +1672,7 @@ impl InputProcContrib {
                 ));
             }
             let reply = serialize(&(evaluation_inputs, mask_shares))?;
-            Ok(((), reply))
+            Ok(((), vec![reply]))
         } else {
             Err(MacError)
         }
@@ -1702,9 +1680,9 @@ impl InputProcContrib {
 }
 
 impl InputProcEval {
-    fn run(mut self, msg: &[u8], circuit: &Circuit) -> TandemResult<Vec<bool>> {
+    fn run(mut self, msgs: &Msgs, circuit: &Circuit) -> TandemResult<Vec<bool>> {
         let (inputs, shares): (Vec<(u32, WireLabel, bool)>, Vec<InputMaskShare>) =
-            deserialize(msg)?;
+            deserialize(&msgs[0])?;
         for (index, label, masked_value) in inputs {
             if circuit.gates()[index as usize] != Gate::InEval
                 && circuit.gates()[index as usize] != Gate::InContrib
