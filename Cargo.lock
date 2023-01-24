@@ -521,6 +521,7 @@ dependencies = [
  "fiat-crypto",
  "packed_simd_2",
  "platforms",
+ "rand_core",
  "subtle",
  "zeroize",
 ]
