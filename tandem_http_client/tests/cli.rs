@@ -26,7 +26,7 @@ fn invalid_url() -> Result<(), Box<dyn std::error::Error>> {
         .assert()
         .failure()
         .stderr(predicate::str::contains(format!(
-            "Invalid value \'{url}\' for '--url <URL>'"
+            "invalid value \'{url}\' for '--url <URL>'"
         )));
 
     Ok(())
