@@ -116,14 +116,7 @@ fn interest_as_u8(interest: UserInterest) -> u8 {
 }
 
 fn is_signature_ok(state: UserState, website_key: SigningKey) -> bool {
-    let mut bytes = [0u8; 16];
-    for i in 0usize..16usize {
-        bytes[i] = interest_as_u8(state.interests[i]);
-    }
-    let st = absorb(bytes);
-    let st = absorb_cont(st, website_key.key);
-    let hash = squeeze(st);
-    hash == state.signature
+    state.signature == sign(state.interests, website_key);
 }
 
 fn sign(interests: [UserInterest; 16], website_key: SigningKey) -> [u8; 16] {
