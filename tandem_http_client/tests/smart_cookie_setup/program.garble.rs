@@ -227,7 +227,7 @@ fn rotate_right(val: u32, rotation: u8) -> u32 {
 fn u8_to_u32_arr(st: [u8; 48]) -> [u32; 12] {
     let mut arr = [0u32; 12];
     for i in 0usize..12usize {
-        u8_to_u32(st, i * 4usize)
+        arr[i] = u8_to_u32(st, i * 4usize)
     }
     arr
 }
