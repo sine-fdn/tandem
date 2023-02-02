@@ -92,7 +92,7 @@ impl Sender {
         RNG: rand::RngCore + rand::CryptoRng,
     {
         let private_key = Scalar::random::<RNG>(rng);
-        let pub_key = &RISTRETTO_BASEPOINT_TABLE * &private_key;
+        let pub_key = RISTRETTO_BASEPOINT_TABLE * &private_key;
         let pub_key_squared = pub_key * private_key;
 
         Self {
@@ -179,7 +179,7 @@ impl Receiver {
         let private_key = Scalar::random(rng);
 
         let upstream_pub_key = upstream_init.0;
-        let my_pub_key = &RISTRETTO_BASEPOINT_TABLE * &private_key;
+        let my_pub_key = RISTRETTO_BASEPOINT_TABLE * &private_key;
 
         let chosen_pub_key = {
             let choices = [my_pub_key, upstream_pub_key + my_pub_key];
