@@ -6,7 +6,7 @@ article1 = "WebsiteVisit { key: SigningKey { key: [1u8; 16] }, interest: UserInt
 article2 = "WebsiteVisit { key: SigningKey { key: [1u8; 16] }, interest: UserInterest::Politics }"
 article3 = "WebsiteVisit { key: SigningKey { key: [1u8; 16] }, interest: UserInterest::Cars }"
 article4 = "WebsiteVisit { key: SigningKey { key: [1u8; 16] }, interest: UserInterest::Sports }"
-article5 = "WebsiteVisit { key: SigningKey { key: [1u8; 16] }, interest: UserInterest::Politics }"
+article5 = "WebsiteVisit { key: SigningKey { key: [123u8; 16] }, interest: UserInterest::Politics }"
 
 [handlers.decide_ad]
 _ = "SigningKey { key: [1u8; 16] }"
