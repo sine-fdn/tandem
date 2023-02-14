@@ -17,7 +17,7 @@ keywords = [
 
 [dependencies]
 tandem = { version = "0.3.0", path = "../tandem" }
-garble_lang = { version = "0.1.7", features = ["serde"] }
+garble_lang = { version = "0.1.8", features = ["serde"] }
 
 [lib]
 bench = false
