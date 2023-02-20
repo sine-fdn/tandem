@@ -97,8 +97,8 @@ pub fn compile_program(prg: &TypedProgram, fn_name: &str) -> Result<TypedCircuit
 /// In the case of the evaluator, the result will be the type of the _second_ function parameter.
 pub fn input_type(role: Role, fn_def: &TypedFnDef) -> &'_ Type {
     match role {
-        Role::Contributor => &fn_def.params[0].2,
-        Role::Evaluator => &fn_def.params[1].2,
+        Role::Contributor => &fn_def.params[0].ty,
+        Role::Evaluator => &fn_def.params[1].ty,
     }
 }
 
