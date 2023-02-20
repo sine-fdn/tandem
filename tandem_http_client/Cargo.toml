@@ -51,7 +51,6 @@ anyhow = "1.0"
 wasm-bindgen = { version = "0.2", features = ["serde-serialize"] }
 wasm-bindgen-futures = "0.4"
 console_error_panic_hook = { version = "0.1", optional = true }
-wee_alloc = { version = "0.4", optional = true }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
 rand = "0.8.5"
