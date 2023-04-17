@@ -1,17 +1,17 @@
-name: Dependabot-Alerts
-on:
-  pull_request:
-    branches:
-      - 'dependabot/**'
+on: [pull_request]
+
+name: Dependabot
+
 jobs:
-  alert:
+  run_if:
+    if:  startsWith(github.head_ref, 'dependabot/')
+    name: Notify
     runs-on: ubuntu-latest
     steps:
-      - name: Post to a Slack channel
-        id: slack
+      - name: Post to Slack
         uses: slackapi/slack-github-action@v1.23.0
         with:
           channel-id: 'C04658EJ9QS'
-          slack-message: "New Dependabot PR: ${{ job.status }} - ${{ github.event.pull_request.html_url || github.event.head_commit.url }}"
+          slack-message: "New Dependabot PR: ${{ github.event.pull_request.html_url || github.event.head_commit.url }}"
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
