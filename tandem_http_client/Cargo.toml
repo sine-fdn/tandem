@@ -56,7 +56,7 @@ console_error_panic_hook = { version = "0.1", optional = true }
 rand = "0.8.5"
 assert_cmd = "2.0"
 predicates = "3.0"
-criterion = { version = "0.4", features = ["async_tokio"] }
+criterion = { version = "0.5", features = ["async_tokio"] }
 
 [target.'cfg(target_arch = "wasm32")'.dev-dependencies]
 wasm-bindgen-test = "0.3"
