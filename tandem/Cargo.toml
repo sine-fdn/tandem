@@ -19,7 +19,7 @@ keywords = [
 rand = "0.8.3"
 rand_chacha = "0.3.1"
 blake3 = { version = "1.4.1", features = ["traits-preview"] }
-curve25519-dalek = { version = "4.1.0", features = ["rand_core"] }
+curve25519-dalek = { version = "4.1.1", features = ["rand_core"] }
 serde = "1.0"
 bincode = "1.3"
 
