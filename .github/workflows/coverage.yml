@@ -25,7 +25,7 @@ jobs:
         run: cargo +nightly build --all-features
       - name:                   Generate code coverage
         run: |
-          RUST_MIN_STACK=8388608 cargo +nightly tarpaulin --skip-clean --all-features --workspace --timeout 600 --out Xml -- --nocapture
+          RUST_MIN_STACK=8388608 cargo +nightly tarpaulin --skip-clean --all-features --workspace --timeout 600 --out xml -- --nocapture
       - name:                   Upload to codecov.io
         uses:                   codecov/codecov-action@v2
         with:
