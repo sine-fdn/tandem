@@ -70,6 +70,9 @@ pub(crate) fn create_session(
         request_headers: handled.request_headers,
         server_version,
     };
+
+    // Otherwise clippy complains that the uri! macro is using an unnecessary redefinition of engine_id.
+    #[allow(clippy::redundant_locals)]
     let c = Created::new(uri!(dialog(engine_id)).to_string()).body(Json(body));
     Ok(c)
 }
