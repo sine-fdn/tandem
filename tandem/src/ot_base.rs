@@ -94,7 +94,7 @@ impl Sender {
         RNG: rand::RngCore + rand::CryptoRng,
     {
         let private_key = Scalar::random::<RNG>(rng);
-        let pub_key = RISTRETTO_BASEPOINT_TABLE.mul(&private_key);
+        let pub_key = &RISTRETTO_BASEPOINT_TABLE * &private_key;
         let pub_key_squared = pub_key * private_key;
 
         Self {
