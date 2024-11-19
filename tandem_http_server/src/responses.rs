@@ -22,7 +22,7 @@ pub(crate) enum Error {
     Internal {
         message: String,
     },
-    BincodeError,
+    Bincode,
     Engine,
     IncompatibleVersions {
         client_version: String,
@@ -52,7 +52,7 @@ impl Error {
             Error::MpcRequestRejected(_) => Status::BadRequest,
             Error::DuplicateEngineId { .. } => Status::BadRequest,
             Error::UnexpectedMessageId => Status::BadRequest,
-            Error::BincodeError => Status::BadRequest,
+            Error::Bincode => Status::BadRequest,
             Error::NoSuchEngineId { .. } => Status::NotFound,
             Error::Internal { .. } => Status::InternalServerError,
             Error::Engine { .. } => Status::InternalServerError,
@@ -62,7 +62,7 @@ impl Error {
 
 impl From<bincode::Error> for Error {
     fn from(_: bincode::Error) -> Self {
-        Self::BincodeError
+        Self::Bincode
     }
 }
 
