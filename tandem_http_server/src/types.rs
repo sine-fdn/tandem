@@ -3,10 +3,7 @@ use std::collections::HashMap;
 use rocket::serde::{Deserialize, Serialize};
 use tandem::Circuit;
 
-//use crate::msg_queue::MessageId;
-
 pub type EngineId = String;
-//pub type MessageLog = Vec<(Msg, MessageId)>;
 
 /// Custom logic to choose a server's circuit and input.
 pub type HandleMpcRequestFn = Box<dyn Fn(MpcRequest) -> Result<MpcSession, String> + Send + Sync>;
