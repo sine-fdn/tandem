@@ -171,10 +171,10 @@ impl<C: Borrow<Circuit>, I: Borrow<[bool]>> Evaluator<C, I> {
                 (Box::new(Step8(state)), msg)
             }
             Step8(s) => {
-                let (output, _) = s.run(msg, self.circuit.borrow())?;
-                (Box::new(Done(output)), vec![])
+                let (_, _) = s.run(msg, self.circuit.borrow())?;
+                (Box::new(Done()), vec![])
             }
-            Done(_) => return Err(Error::ProtocolEnded),
+            Done() => return Err(Error::ProtocolEnded),
         };
         let next_state = Evaluator {
             state,
@@ -218,7 +218,7 @@ enum EvalState {
     Step5(EvalStep5),
     Step6(EvalStep6),
     Step8(InputProcEval),
-    Done(Vec<bool>),
+    Done(),
 }
 
 #[derive(Clone)]
@@ -252,9 +252,6 @@ struct ContribStep4(OtAndsState4);
 
 #[derive(Clone)]
 struct ContribBucketingStep(AndsBucketingState);
-
-#[derive(Clone)]
-struct ContribStep5(OtAndsState6);
 
 #[derive(Clone)]
 struct EvalStep5(OtAndsState5);
@@ -1041,8 +1038,8 @@ fn ot_ands5(mut state: OtAndsState4, msg: &[u8]) -> StateResult<OtAndsState5> {
 
 fn check_hash(
     state: &OtAndsState5,
-    r_prime: &Vec<MacType>,
-    r_and_rand: &Vec<(MacType, KeyType)>,
+    r_prime: &[MacType],
+    r_and_rand: &[(MacType, KeyType)],
 ) -> Result<(), Error> {
     if r_prime.len() != r_and_rand.len() || r_prime.len() != state.r_and_rand_key.len() {
         return Err(UnexpectedMessageType);

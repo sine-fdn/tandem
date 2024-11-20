@@ -4,7 +4,7 @@ use crate::{
     build,
     msg_queue::{MessageId, MsgQueue},
     requests::NewSession,
-    types::{EngineCreationResult, MessageLog, MpcSession},
+    types::{EngineCreationResult, MpcSession},
     MpcRequest,
 };
 use std::collections::HashMap;
@@ -24,6 +24,8 @@ use tandem::{
 use tandem_garble_interop::{
     check_program, compile_program, deserialize_output, serialize_input, Role, TypedCircuit,
 };
+
+type MessageLog = Vec<(tandem::states::Msg, crate::msg_queue::MessageId)>;
 
 #[launch]
 pub fn _rocket() -> _ {

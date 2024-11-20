@@ -20,7 +20,7 @@ pub(crate) const BLOCK_SIZE: usize = K;
 pub(crate) mod message {
     use serde::{Deserialize, Serialize};
 
-    use crate::{ot_base::message::Init, ot_base::message::InitReply, types::MacType, Error};
+    use crate::{ot_base::message::Init, ot_base::message::InitReply, Error};
 
     #[derive(Debug, Clone, PartialEq)]
     pub struct OtInit(pub(super) Box<[Init; super::K]>);
@@ -77,9 +77,6 @@ pub(crate) mod message {
             Ok(OtInitReply(init_reply))
         }
     }
-
-    #[derive(Debug, Clone, PartialEq, Eq)]
-    pub(crate) struct OtBits(pub(super) [MacType; super::K]);
 }
 
 /// Initial state of a Receiver in Leaky Delta OT protocol terms.
