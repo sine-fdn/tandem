@@ -18,7 +18,7 @@ async fn test() {
         MpcData::from_string(&program, "2u16".to_string()).expect("Could not parse input");
     let output = compute(url.to_string(), remote_input.to_string(), program, my_input).await;
     match output {
-        Ok(output) => assert_eq!(output.to_literal_string(), "4i32"),
+        Ok(output) => assert_eq!(output.to_literal_string(), "4"),
         Err(e) => panic!("{e:?}"),
     }
 }
