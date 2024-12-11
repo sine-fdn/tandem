@@ -2,9 +2,9 @@
 //!
 //!
 //! [ABKLX21]: https://eprint.iacr.org/2021/1218.pdf
-use curve25519_dalek::constants::RISTRETTO_BASEPOINT_TABLE;
-use curve25519_dalek::ristretto::RistrettoPoint;
-use curve25519_dalek::scalar::Scalar;
+use curve25519_dalek_ng::constants::RISTRETTO_BASEPOINT_TABLE;
+use curve25519_dalek_ng::ristretto::RistrettoPoint;
+use curve25519_dalek_ng::scalar::Scalar;
 
 pub(crate) const MSG_LEN: usize = 32;
 
@@ -34,7 +34,7 @@ pub(crate) struct Receiver {
 pub(crate) mod message {
     use std::slice;
 
-    use curve25519_dalek::ristretto::{CompressedRistretto, RistrettoPoint};
+    use curve25519_dalek_ng::ristretto::{CompressedRistretto, RistrettoPoint};
 
     use crate::Error;
 
@@ -92,7 +92,7 @@ impl Sender {
         RNG: rand::RngCore + rand::CryptoRng,
     {
         let private_key = Scalar::random::<RNG>(rng);
-        let pub_key = RISTRETTO_BASEPOINT_TABLE * &private_key;
+        let pub_key = &RISTRETTO_BASEPOINT_TABLE * &private_key;
         let pub_key_squared = pub_key * private_key;
 
         Self {
@@ -179,7 +179,7 @@ impl Receiver {
         let private_key = Scalar::random(rng);
 
         let upstream_pub_key = upstream_init.0;
-        let my_pub_key = RISTRETTO_BASEPOINT_TABLE * &private_key;
+        let my_pub_key = &RISTRETTO_BASEPOINT_TABLE * &private_key;
 
         let chosen_pub_key = {
             let choices = [my_pub_key, upstream_pub_key + my_pub_key];
