@@ -320,7 +320,8 @@ pub async fn compute(
 ) -> Result<MpcData, Error> {
     let url = Url::parse(&url)?;
 
-    let my_input = input.literal.as_bits(&program.ast);
+    let const_sizes = HashMap::new();
+    let my_input = input.literal.as_bits(&program.ast, &const_sizes);
 
     let expected_input_len = program
         .circuit
