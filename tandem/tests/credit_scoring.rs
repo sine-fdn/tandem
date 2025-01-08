@@ -25,7 +25,7 @@ fn compute_score() -> Result<(), String> {
 
     let score = deserialize_output(&typed_prg, &circuit.fn_def, &result)?;
 
-    assert_eq!(score.to_string(), "Score::Good(85u8)");
+    assert_eq!(score.to_string(), "Score::Good(85)");
 
     Ok(())
 }
