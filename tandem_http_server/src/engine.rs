@@ -91,7 +91,7 @@ pub(crate) fn delete_session(engine_id: String, r: &State<EngineRegistry>) -> Re
 }
 
 #[post("/<engine_id>", data = "<messages>")]
-pub(crate) async fn dialog<'a>(
+pub(crate) async fn dialog(
     engine_id: String,
     messages: Data<'_>,
     registry: &State<EngineRegistry>,

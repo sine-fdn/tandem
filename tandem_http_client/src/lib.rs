@@ -383,8 +383,8 @@ impl TandemClient {
         Self { url: url.clone() }
     }
 
-    async fn new_session<'a, 'b>(
-        &'a self,
+    async fn new_session(
+        &self,
         circuit: &Circuit,
         source_code: String,
         function: String,
