@@ -43,7 +43,7 @@ pub fn check_program(program: &str) -> Result<TypedProgram> {
 /// Assumes that the input program has been correctly type-checked and **panics** if
 /// incompatible types are found that should have been caught by the type-checker.
 pub fn compile_program(prg: &TypedProgram, fn_name: &str) -> Result<TypedCircuit> {
-    let (circuit, fn_def) = prg.compile(fn_name).map_err(|e| format!("{e}"))?;
+    let (circuit, fn_def) = prg.compile(fn_name).map_err(|e| format!("{:?}", e))?;
     let info_about_gates = circuit.report_gates();
     if circuit.input_gates.len() != 2 {
         return Err("The main function is not a 2-Party function".to_string());
@@ -122,7 +122,8 @@ pub fn serialize_input(
 ) -> Result<Vec<bool>> {
     let input_ty = input_type(role, fn_def);
     let input = Literal::parse(prg, input_ty, input).map_err(|e| e.prettify(input))?;
-    Ok(input.as_bits(prg))
+    let const_sizes = std::collections::HashMap::new();
+    Ok(input.as_bits(prg, &const_sizes))
 }
 
 /// Decodes output bits from the Tandem engine as a Garble literal.
@@ -132,5 +133,6 @@ pub fn deserialize_output(
     output: &[bool],
 ) -> Result<Literal> {
     let output_ty = &fn_def.ty;
-    Literal::from_result_bits(prg, output_ty, output).map_err(|e| e.prettify(""))
+    let const_sizes = std::collections::HashMap::new();
+    Literal::from_result_bits(prg, output_ty, output, &const_sizes).map_err(|e| e.prettify(""))
 }
