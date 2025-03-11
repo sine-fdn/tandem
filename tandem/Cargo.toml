@@ -18,7 +18,7 @@ keywords = [
 [dependencies]
 rand = "0.8.3"
 rand_chacha = "0.3.1"
-blake3 = { version = "1.5.5", features = ["traits-preview"] }
+blake3 = { version = "1.6.1", features = ["traits-preview"] }
 curve25519-dalek-ng = "4.1.1"
 serde = "1.0"
 bincode = "1.3"
