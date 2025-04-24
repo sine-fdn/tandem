@@ -55,7 +55,7 @@ impl Error {
             Error::Bincode => Status::BadRequest,
             Error::NoSuchEngineId { .. } => Status::NotFound,
             Error::Internal { .. } => Status::InternalServerError,
-            Error::Engine { .. } => Status::InternalServerError,
+            Error::Engine => Status::InternalServerError,
         }
     }
 }
