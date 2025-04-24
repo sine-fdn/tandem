@@ -1,33 +1,33 @@
-name:                           Coverage
+name: Coverage
 
-on:                             [push]
+on: [push]
 jobs:
   test:
-    runs-on:                    ubuntu-latest
+    runs-on: ubuntu-latest
     container:
-      image:                    xd009642/tarpaulin:develop-nightly
-      options:                  --security-opt seccomp=unconfined
-    if:                         ${{ github.actor != 'dependabot[bot]' }}
+      image: xd009642/tarpaulin:develop-nightly
+      options: --security-opt seccomp=unconfined
+    if: ${{ github.actor != 'dependabot[bot]' }}
     steps:
-      - name:                   Checkout repository
-        uses:                   actions/checkout@v2
+      - name: Checkout repository
+        uses: actions/checkout@v4
       - name: Cache target
-        uses: actions/cache@v2
-        env:
-          cache-name: cache-default-target-and-lockfile
+        uses: actions/cache@v4
         with:
           path: |
-            target
-            Cargo.lock
-            ~/.rustup
-          key: ${{ env.cache-name }}-${{ hashFiles('**/Cargo.toml') }}
-      - name:                   Build HTTP server binary
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+      - name: Build HTTP server binary
         run: cargo +nightly build --all-features
-      - name:                   Generate code coverage
+      - name: Generate code coverage
         run: |
           RUST_MIN_STACK=8388608 cargo +nightly tarpaulin --skip-clean --all-features --workspace --timeout 600 --out xml -- --nocapture
-      - name:                   Upload to codecov.io
-        uses:                   codecov/codecov-action@v2
+      - name: Upload to codecov.io
+        uses: codecov/codecov-action@v2
         with:
-          token:                ${{secrets.CODECOV_TOKEN}}
-          fail_ci_if_error:     true
+          token: ${{secrets.CODECOV_TOKEN}}
+          fail_ci_if_error: true
