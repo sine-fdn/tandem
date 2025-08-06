@@ -1,4 +1,11 @@
+> [!IMPORTANT]
+> ## **This repository is archived and no longer maintained.**
+>
+> **We are continuing our work on SMPC by implementing our *multiparty* computation engine [Polytune](https://github.com/sine-fdn/polytune)**.
+
+
 # Tandem
+
 
 <img alt="SINE Logo" height="150" align="right" src="https://user-images.githubusercontent.com/358580/204315360-9e4916df-5080-4e7c-bd5b-7e002309b9db.png">
 
