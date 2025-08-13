@@ -1,7 +1,7 @@
 > [!IMPORTANT]
 > ## **This repository is archived and no longer maintained.**
 >
-> **We are continuing our work on SMPC by implementing our *multiparty* computation engine [Polytune](https://github.com/sine-fdn/polytune)**.
+> **We are continuing our work on SMPC by implementing our secure *multi-party* computation engine [Polytune](https://github.com/sine-fdn/polytune)**.
 
 
 # Tandem
