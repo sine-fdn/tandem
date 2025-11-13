@@ -757,9 +757,9 @@ dependencies = [
 
 [[package]]
 name = "garble_lang"
-version = "0.5.0"
+version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9310f9d624fb9e4f6694acaf232abfc527aef2a4b232983870774e13ec2e9d5b"
+checksum = "b207c7b961f4da9035ffb6540590e131349bfcafadd99dc48747b3976c30ef92"
 dependencies = [
  "serde",
 ]
